@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Inter+Tight:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="./players.js"></script>
+<script src="./strikr-i18n.js"></script>
+<script src="./strikr-diamonds.js"></script>
+<script src="./strikr-fx.js"></script>
+<script src="./wiki-overrides.js"></script>
+<script src="./wiki-lookup.js"></script>
+<script src="./strikr-game.js"></script>
+<script src="./strikr-daily.js"></script>
+<style>
+html,body{margin:0;padding:0;background:#1a1a1a;height:100%;overscroll-behavior:none}
+body{font-family:'Space Grotesk',system-ui,sans-serif}
+#app-root{position:fixed;inset:0;display:flex;flex-direction:column}
+#app-screens{flex:1;position:relative;overflow:hidden}
+.app-screen{position:absolute;inset:0;display:none;flex-direction:column;background:#fff8ee;overflow-y:auto}
+.app-screen.active{display:flex}
+#app-tabs{flex-shrink:0;display:flex;background:#fff;border-top:2.5px solid #1a1a1a;padding:8px 10px calc(10px + env(safe-area-inset-bottom));align-items:center}
+.app-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;font-family:inherit;cursor:pointer;padding:6px 4px}
+.app-tab-icon{font-size:20px;opacity:.35}
+.app-tab-label{font:800 9px 'JetBrains Mono';letter-spacing:.06em;color:rgba(0,0,0,.35)}
+.app-tab.active .app-tab-icon{opacity:1}
+.app-tab.active .app-tab-label{color:#ff5a3c}
+.app-tab-center{width:52px;height:52px;border-radius:99px;background:#ff5a3c;border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:3px 3px 0 #1a1a1a;transform:translateY(-4px);cursor:pointer;flex-shrink:0}
+button{font-family:inherit}
+@keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.rise-1{animation:rise .45s .00s ease-out both}
+.rise-2{animation:rise .45s .06s ease-out both}
+.rise-3{animation:rise .45s .12s ease-out both}
+.rise-4{animation:rise .45s .18s ease-out both}
+.rise-5{animation:rise .45s .24s ease-out both}
+</style>
+</helmet>
+
+<div id="app-root">
+  <div id="onboarding" style="position:absolute;inset:0;z-index:50;background:#fff8ee;display:flex;flex-direction:column">
+    <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+    <div style="padding:12px 20px 0;display:flex;justify-content:flex-end">
+      <button type="button" id="ob-skip" style="font:700 12px 'JetBrains Mono';color:rgba(0,0,0,.4);background:none;border:none;cursor:pointer;letter-spacing:.08em" data-i18n="onboarding_skip">PASSER →</button>
+    </div>
+    <div id="ob-slides" style="flex:1;position:relative;overflow-y:auto;overflow-x:hidden;min-height:0"></div>
+    <div style="display:flex;justify-content:center;gap:6px;padding:0 20px 14px" id="ob-dots"></div>
+    <div style="padding:0 20px calc(24px + env(safe-area-inset-bottom))">
+      <button type="button" id="ob-next" style="width:100%;padding:16px;background:#ff5a3c;color:#fff;border:2.5px solid #1a1a1a;border-radius:14px;font:900 14px 'Inter Tight';letter-spacing:.04em;text-transform:uppercase;box-shadow:4px 4px 0 #1a1a1a;cursor:pointer">Suivant →</button>
+    </div>
+  </div>
+  <div id="app-screens">
+
+    <!-- HOME -->
+    <div class="app-screen active" data-screen="home">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:#ff5a3c;border-radius:99px;opacity:.08"></div>
+        <div style="position:absolute;top:200px;left:-40px;width:140px;height:140px;background:#2b3ff2;border-radius:99px;opacity:.06"></div>
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:14px 20px 6px;display:flex;justify-content:space-between;align-items:center;position:relative">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="width:32px;height:32px;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;font:900 14px 'Inter Tight';color:#ffe66b">⚽</div>
+            <div style="font:900 18px 'Inter Tight';color:#1a1a1a;letter-spacing:-.02em">STRIKR</div>
+          </div>
+          <div style="display:flex;gap:5px">
+            <div style="padding:4px 9px;background:#ffe66b;border:2px solid #1a1a1a;border-radius:99px;font:800 10px 'Inter Tight';color:#1a1a1a">🔥 7</div>
+            <div id="home-diamonds" style="padding:4px 9px;background:#a8f5c6;border:2px solid #1a1a1a;border-radius:99px;font:800 10px 'Inter Tight';color:#1a1a1a">💎 …</div>
+          </div>
+        <div style="padding:14px 20px 6px;position:relative">
+          <div style="background:#1a1a1a;color:#fff;border:2.5px solid #1a1a1a;border-radius:18px;padding:18px;box-shadow:5px 5px 0 #ff5a3c;position:relative;overflow:hidden">
+            <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,#ff5a3c,transparent 70%);opacity:.4"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative">
+              <div>
+                <div style="font:700 10px 'JetBrains Mono';color:#ffe66b;letter-spacing:.18em" data-i18n="home_puzzle_kicker">PUZZLE DU JOUR</div>
+                <div style="font:900 40px/1 'Inter Tight';margin-top:6px;letter-spacing:-.03em">N°142</div>
+                <div style="font:500 12px/1.35 'Space Grotesk';color:rgba(255,255,255,.65);margin-top:8px;max-width:170px" data-i18n="home_puzzle_body">Un joueur, ses clubs, une seule chance à chaque reveal.</div>
+              </div>
+              <div style="width:72px;height:88px;background:linear-gradient(180deg,#ff5a3c,#ffb03c);border:2px solid #ffe66b;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:44px;transform:rotate(6deg)">👤</div>
+            </div>
+            <button type="button" data-nav="game" style="width:100%;margin-top:16px;padding:14px;background:#ffe66b;color:#1a1a1a;border:2.5px solid #ffe66b;border-radius:12px;font:900 14px 'Inter Tight';letter-spacing:.04em;text-transform:uppercase;cursor:pointer" data-i18n="home_play_now">▶ Jouer maintenant</button>
+            <div style="font:600 10px 'JetBrains Mono';color:rgba(255,255,255,.4);margin-top:8px;text-align:center;letter-spacing:.1em"><span data-i18n="home_stats_players">JOUEURS</span> · 125 234 · <span data-i18n="home_stats_avg">MOYENNE 3.4 CLUBS</span></div>
+          </div>
+        </div>
+        <div style="padding:12px 20px 6px;display:flex;gap:8px">
+          <div style="flex:1;background:#fff;border:2px solid #1a1a1a;border-radius:12px;padding:10px 8px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="font:900 22px 'Inter Tight';color:#1a1a1a">87</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.1em;margin-top:1px" data-i18n="home_solves">SOLVES</div>
+          </div>
+          <div style="flex:1;background:#a8f5c6;border:2px solid #1a1a1a;border-radius:12px;padding:10px 8px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="font:900 22px 'Inter Tight';color:#1a1a1a">🔥 14</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.1em;margin-top:1px" data-i18n="home_best">BEST</div>
+          </div>
+          <div style="flex:1;background:#ffcae0;border:2px solid #1a1a1a;border-radius:12px;padding:10px 8px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="font:900 22px 'Inter Tight';color:#1a1a1a">62%</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.1em;margin-top:1px" data-i18n="home_first_try">1ER COUP</div>
+          </div>
+        </div>
+        <div style="padding:10px 20px 20px;display:flex;flex-direction:column;gap:8px">
+          <button type="button" data-nav="daily" style="background:#2b3ff2;color:#fff;border:2px solid #1a1a1a;border-radius:14px;padding:12px 14px;box-shadow:3px 3px 0 #ffe66b;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
+            <div style="font-size:26px">🔤</div>
+            <div style="flex:1">
+              <div style="font:700 9px 'JetBrains Mono';color:#ffe66b;letter-spacing:.14em" data-i18n="home_daily_kicker">DÉFI DU JOUR · NOUVEAU</div>
+              <div style="font:900 15px 'Inter Tight';margin-top:2px" data-i18n="home_daily_title">Devine le joueur en 6 essais</div>
+              <div style="font:500 10px 'Space Grotesk';opacity:.75;margin-top:1px" data-i18n="home_daily_sub">Même joueur pour tous · jusqu'à +50 💎</div>
+            </div>
+            <div style="font:900 22px 'Inter Tight';color:#ffe66b">→</div>
+          </button>
+          <button type="button" data-nav="league" style="background:#1a1a1a;color:#fff;border:2px solid #1a1a1a;border-radius:14px;padding:12px 14px;box-shadow:3px 3px 0 #ffe66b;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
+            <div style="font-size:26px">🏆</div>
+            <div style="flex:1">
+              <div style="font:700 9px 'JetBrains Mono';color:#ffe66b;letter-spacing:.14em" data-i18n="home_league_kicker">LIGUE OR · SAISON S2</div>
+              <div style="font:900 15px 'Inter Tight';margin-top:2px">6ᵉ sur 42</div>
+              <div style="font:500 10px 'Space Grotesk';opacity:.7;margin-top:1px" data-i18n="home_league_sub">+390 XP pour top 3 · J-3</div>
+            </div>
+            <div style="font:900 22px 'Inter Tight';color:#ffe66b">→</div>
+          </button>
+          <button type="button" data-nav="missions" style="background:#fff;border:2px solid #1a1a1a;border-radius:14px;padding:12px 14px;box-shadow:3px 3px 0 #1a1a1a;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left">
+            <div style="font-size:26px">🎯</div>
+            <div style="flex:1">
+              <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.55);letter-spacing:.14em" data-i18n="home_missions_kicker">MISSIONS DU JOUR</div>
+              <div style="font:900 15px 'Inter Tight';color:#1a1a1a;margin-top:2px">1/4 · +200 XP acquis</div>
+              <div style="height:5px;background:#f0eadf;border-radius:99px;margin-top:5px;overflow:hidden"><div style="width:25%;height:100%;background:#ff5a3c"></div></div>
+            </div>
+          </button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MISSIONS -->
+    <div class="app-screen" data-screen="missions">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:14px 20px 4px">
+          <div style="font:900 30px/1 'Inter Tight';color:#1a1a1a;letter-spacing:-.02em"><span data-i18n="missions_title_1">Missions</span> <span style="color:#ff5a3c" data-i18n="missions_title_2">du jour</span></div>
+          <div style="font:500 12px/1.35 'Space Grotesk';color:rgba(0,0,0,.55);margin-top:4px" data-i18n-html="missions_subtitle_html">4 défis, <strong>+800 XP</strong> + badge légendaire.</div>
+        </div>
+        <div style="padding:14px 20px 4px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+            <div style="font:800 11px 'Inter Tight';color:#1a1a1a"><span data-i18n="missions_progress">Progression</span> 1/4</div>
+            <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.5)">+200 XP</div>
+          </div>
+          <div style="height:10px;background:#fff;border:2px solid #1a1a1a;border-radius:99px;overflow:hidden">
+            <div style="width:25%;height:100%;background:linear-gradient(90deg,#ff5a3c,#ffb03c)"></div>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:12px 20px 20px;display:flex;flex-direction:column;gap:8px">
+          <div class="rise-1" style="display:flex;align-items:center;gap:10px;padding:10px;background:#a8f5c6;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="width:40px;height:40px;border-radius:9px;background:#fff;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px">✅</div>
+            <div style="flex:1">
+              <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="mission_1_title">Devine le player du jour</div>
+              <div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.55);margin-top:1px" data-i18n="mission_1_detail">2 essais · +200 XP · +2 💎</div>
+            </div>
+            <div style="padding:4px 9px;background:#1a1a1a;color:#fff;border-radius:99px;font:800 9px 'JetBrains Mono'" data-i18n="label_done">DONE</div>
+          </div>
+          <div class="rise-2" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="width:40px;height:40px;border-radius:9px;background:#ffe66b;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px">⚡</div>
+            <div style="flex:1">
+              <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="mission_2_title">Speedrun · &lt; 30 s</div>
+              <div style="height:5px;background:#f0eadf;border-radius:99px;margin-top:5px;overflow:hidden"><div style="width:60%;height:100%;background:#ffb03c"></div></div>
+              <div style="font:600 9px 'JetBrains Mono';color:rgba(0,0,0,.55);margin-top:3px">0:42 / 0:30 · +150 XP</div>
+            </div>
+          </div>
+          <div class="rise-3" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="width:40px;height:40px;border-radius:9px;background:#c9d8ff;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px">🎯</div>
+            <div style="flex:1">
+              <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="mission_3_title">Perfect · 1er essai</div>
+              <div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.55);margin-top:1px" data-i18n="mission_3_detail">Mode difficile · +250 XP · +3 💎</div>
+            </div>
+            <button type="button" style="padding:6px 11px;background:#2b3ff2;color:#fff;border:2px solid #1a1a1a;border-radius:99px;font:900 10px 'Inter Tight'" data-i18n="btn_go">GO</button>
+          </div>
+          <div class="rise-4" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+            <div style="width:40px;height:40px;border-radius:9px;background:#ffcae0;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px">🏆</div>
+            <div style="flex:1">
+              <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="mission_4_title">Bats 3 amis en duel</div>
+              <div style="height:5px;background:#f0eadf;border-radius:99px;margin-top:5px;overflow:hidden"><div style="width:33%;height:100%;background:#ff5a3c"></div></div>
+              <div style="font:600 9px 'JetBrains Mono';color:rgba(0,0,0,.55);margin-top:3px">1/3 · +200 XP + badge</div>
+            </div>
+          </div>
+          <div class="rise-5" style="display:flex;align-items:center;gap:10px;padding:10px;background:linear-gradient(135deg,#1a1a1a,#333);color:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #ffe66b">
+            <div style="width:40px;height:40px;border-radius:9px;background:#ffe66b;border:1.5px solid #ffe66b;display:flex;align-items:center;justify-content:center;font-size:20px">👑</div>
+            <div style="flex:1">
+              <div style="font:900 13px 'Inter Tight'" data-i18n-html="mission_5_title_html">Défi <span style="color:#ffe66b">HEBDO</span></div>
+              <div style="font:600 10px 'Space Grotesk';opacity:.75;margin-top:1px" data-i18n="mission_5_detail">Trouve 7 jours d'affilée · +1000 XP</div>
+            </div>
+            <div style="font:900 12px 'JetBrains Mono';color:#ffe66b">J-3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="app-screen" data-screen="game">
+      <div id="strikr-game" style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden"><div style="padding:80px 20px;text-align:center;font:700 12px 'JetBrains Mono';color:rgba(0,0,0,.4);letter-spacing:.1em">Chargement…</div></div>
+    </div>
+
+    <!-- DAILY -->
+    <div class="app-screen" data-screen="daily">
+      <div id="strikr-daily" style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden"><div style="padding:80px 20px;text-align:center;font:700 12px 'JetBrains Mono';color:rgba(0,0,0,.4);letter-spacing:.1em">Chargement…</div></div>
+    </div>
+
+    <!-- LEAGUE -->
+    <div class="app-screen" data-screen="league">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:14px 20px 4px">
+          <div style="font:900 30px/1 'Inter Tight';color:#1a1a1a;letter-spacing:-.02em" data-i18n-html="league_title_html">Ligue <span style="color:#ff5a3c">Or</span> 🏆</div>
+          <div style="font:500 12px/1.35 'Space Grotesk';color:rgba(0,0,0,.55);margin-top:4px" data-i18n="league_subtitle">Top 30% promus · 3 jours restants</div>
+        </div>
+        <div style="padding:16px 20px 4px;display:flex;align-items:flex-end;justify-content:center;gap:6px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="width:46px;height:46px;border-radius:99px;background:#c9d8ff;border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 16px 'Inter Tight';color:#1a1a1a">M</div>
+            <div style="font:800 11px 'Inter Tight';color:#1a1a1a">Maëlys</div>
+            <div style="width:100%;height:58px;background:#c9d8ff;border:2.5px solid #1a1a1a;border-bottom:none;border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:900 22px 'Inter Tight';color:#1a1a1a">2</div>
+              <div style="font:700 9px 'JetBrains Mono';color:#1a1a1a">2 480</div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="font-size:20px">👑</div>
+            <div style="width:58px;height:58px;border-radius:99px;background:#ffe66b;border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 20px 'Inter Tight';color:#1a1a1a;box-shadow:0 0 24px rgba(255,230,107,.6)">Y</div>
+            <div style="font:900 12px 'Inter Tight';color:#1a1a1a">Yanis</div>
+            <div style="width:100%;height:80px;background:#ffe66b;border:2.5px solid #1a1a1a;border-bottom:none;border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:900 28px 'Inter Tight';color:#1a1a1a">1</div>
+              <div style="font:700 9px 'JetBrains Mono';color:#1a1a1a">2 940</div>
+            </div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="width:42px;height:42px;border-radius:99px;background:#ffcae0;border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 14px 'Inter Tight';color:#1a1a1a">L</div>
+            <div style="font:800 10px 'Inter Tight';color:#1a1a1a">Louis</div>
+            <div style="width:100%;height:42px;background:#ffcae0;border:2.5px solid #1a1a1a;border-bottom:none;border-radius:8px 8px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:900 18px 'Inter Tight';color:#1a1a1a">3</div>
+              <div style="font:700 8px 'JetBrains Mono';color:#1a1a1a">2 210</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:14px 20px 20px">
+          <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.14em;margin-bottom:6px" data-i18n="league_classement">CLASSEMENT</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div class="rise-1" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:22px;font:900 13px 'Inter Tight';color:rgba(0,0,0,.5);text-align:right">4</div>
+              <div style="width:28px;height:28px;border-radius:99px;background:#a8f5c6;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#1a1a1a">A</div>
+              <div style="flex:1;font:800 12px 'Inter Tight';color:#1a1a1a">Ambre</div>
+              <div style="font:800 11px 'JetBrains Mono';color:#1a1a1a">2 040</div>
+            </div>
+            <div class="rise-2" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:22px;font:900 13px 'Inter Tight';color:rgba(0,0,0,.5);text-align:right">5</div>
+              <div style="width:28px;height:28px;border-radius:99px;background:#2b3ff2;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#fff">K</div>
+              <div style="flex:1;font:800 12px 'Inter Tight';color:#1a1a1a">Karim</div>
+              <div style="font:800 11px 'JetBrains Mono';color:#1a1a1a">1 980</div>
+            </div>
+            <div class="rise-3" style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#ff5a3c;color:#fff;border:2.5px solid #1a1a1a;border-radius:12px;box-shadow:3px 3px 0 #1a1a1a">
+              <div style="width:22px;font:900 14px 'Inter Tight';text-align:right">6</div>
+              <div style="width:30px;height:30px;border-radius:99px;background:#ffe66b;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 12px 'Inter Tight';color:#1a1a1a">V</div>
+              <div style="flex:1"><div style="font:900 13px 'Inter Tight'" data-i18n="league_you">Vous</div><div style="font:700 9px 'JetBrains Mono';opacity:.85"><span data-i18n="league_streak">STREAK</span> 7 · +250 <span data-i18n="league_today">aujourd'hui</span></div></div>
+              <div style="font:900 12px 'JetBrains Mono'">1 820</div>
+            </div>
+            <div class="rise-4" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:22px;font:900 13px 'Inter Tight';color:rgba(0,0,0,.5);text-align:right">7</div>
+              <div style="width:28px;height:28px;border-radius:99px;background:#7a2b52;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#fff">S</div>
+              <div style="flex:1;font:800 12px 'Inter Tight';color:#1a1a1a">Sofia</div>
+              <div style="font:800 11px 'JetBrains Mono';color:#1a1a1a">1 770</div>
+            </div>
+            <div class="rise-5" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:22px;font:900 13px 'Inter Tight';color:rgba(0,0,0,.5);text-align:right">8</div>
+              <div style="width:28px;height:28px;border-radius:99px;background:#2a6f4d;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#fff">T</div>
+              <div style="flex:1;font:800 12px 'Inter Tight';color:#1a1a1a">Théo</div>
+              <div style="font:800 11px 'JetBrains Mono';color:#1a1a1a">1 640</div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button type="button" data-nav="friends" style="display:flex;width:100%;justify-content:space-between;align-items:baseline;margin-bottom:6px;background:none;border:none;cursor:pointer;padding:0">
+              <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.14em" data-i18n="league_live_friends">EN DIRECT · 3 amis →</div>
+              <div style="width:6px;height:6px;background:#ff5a3c;border-radius:99px;box-shadow:0 0 0 3px rgba(255,90,60,.25)"></div>
+            </button>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="width:28px;height:28px;border-radius:99px;background:#ffe66b;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#1a1a1a">Y</div>
+                <div style="flex:1;font:600 11px 'Space Grotesk';color:#1a1a1a"><strong>Yanis</strong> a trouvé en 1 essai · <span style="color:#ff5a3c;font-weight:800">+3 💎</span></div>
+                <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.4)">2 min</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="width:28px;height:28px;border-radius:99px;background:#2a6f4d;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 11px 'Inter Tight';color:#fff">T</div>
+                <div style="flex:1;font:600 11px 'Space Grotesk';color:#1a1a1a"><strong>Théo</strong> a débloqué badge <em>Buteur Fou</em> ⚡</div>
+                <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.4)">1h</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFIL -->
+    <div class="app-screen" data-screen="profil">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30px;right:-30px;width:180px;height:180px;background:#ff5a3c;border-radius:99px;opacity:.08"></div>
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:6px 20px 0;display:flex;justify-content:flex-end;position:relative">
+          <button type="button" data-nav="settings" style="font:800 18px 'Inter Tight';color:#1a1a1a;background:none;border:none;cursor:pointer">⚙</button>
+        </div>
+        <div style="padding:6px 20px 0;display:flex;flex-direction:column;align-items:center;position:relative">
+          <div style="position:relative;width:100px;height:100px">
+            <div style="position:absolute;inset:0;border-radius:99px;background:conic-gradient(from 45deg,#2b3ff2,#ff5a3c,#ffe66b,#a8f5c6,#2b3ff2);padding:4px;box-shadow:4px 4px 0 #1a1a1a"><div style="width:100%;height:100%;border-radius:99px;background:#ffe66b;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 40px 'Inter Tight';color:#1a1a1a">V</div></div>
+          </div>
+          <div style="font:900 22px 'Inter Tight';color:#1a1a1a;margin-top:14px;letter-spacing:-.02em">Vous</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <span style="padding:3px 9px;background:#1a1a1a;color:#ffe66b;border-radius:99px;font:800 10px 'JetBrains Mono';letter-spacing:.1em">LVL 14</span>
+            <span style="padding:3px 9px;background:#fff;border:1.5px solid #1a1a1a;border-radius:99px;font:800 10px 'JetBrains Mono';color:#1a1a1a">@vous</span>
+          </div>
+          <button type="button" data-nav="friends" style="margin-top:12px;padding:8px 16px;background:#2b3ff2;color:#fff;border:2px solid #1a1a1a;border-radius:99px;font:800 11px 'Inter Tight';cursor:pointer;box-shadow:2px 2px 0 #1a1a1a">👥 <span data-i18n="profil_my_friends">Mes amis</span> · 3</button>
+        </div>
+        <div style="padding:14px 20px 0">
+          <div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.55);margin-bottom:4px"><span>LVL 14 · 1820 XP</span><span>LVL 15 · 2000</span></div>
+          <div style="height:10px;background:#fff;border:2px solid #1a1a1a;border-radius:99px;overflow:hidden"><div style="width:85%;height:100%;background:linear-gradient(90deg,#ff5a3c,#ffe66b)"></div></div>
+        </div>
+        <div style="padding:14px 20px 4px;display:flex;gap:8px">
+          <div style="flex:1;background:#fff;border:2px solid #1a1a1a;border-radius:12px;padding:9px;box-shadow:3px 3px 0 #1a1a1a;text-align:center">
+            <div style="font:900 20px 'Inter Tight';color:#1a1a1a">87</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.08em" data-i18n="profil_solves">SOLVES</div>
+          </div>
+          <div style="flex:1;background:#a8f5c6;border:2px solid #1a1a1a;border-radius:12px;padding:9px;box-shadow:3px 3px 0 #1a1a1a;text-align:center">
+            <div style="font:900 20px 'Inter Tight';color:#1a1a1a">🔥 7</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.08em" data-i18n="profil_streak">STREAK</div>
+          </div>
+          <div style="flex:1;background:#ffcae0;border:2px solid #1a1a1a;border-radius:12px;padding:9px;box-shadow:3px 3px 0 #1a1a1a;text-align:center">
+            <div id="profil-diamonds" style="font:900 20px 'Inter Tight';color:#1a1a1a">💎…</div>
+            <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.5);letter-spacing:.08em" data-i18n="profil_gems">GEMMES</div>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:14px 20px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+            <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="profil_badges">Badges · 8/24</div>
+            <div style="font:600 10px 'JetBrains Mono';color:#ff5a3c;letter-spacing:.1em" data-i18n="profil_all">TOUS →</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="width:44px;height:44px;border-radius:11px;background:#ffe66b;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">⚽</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#ff5a3c;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">🔥</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#2b3ff2;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">⚡</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#a8f5c6;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">💎</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#7a2b52;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">👑</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#ffcae0;border:2px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:2px 2px 0 #1a1a1a">🎯</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#fff;border:2px dashed rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font:900 16px 'Inter Tight';color:rgba(0,0,0,.3)">?</div>
+            <div style="width:44px;height:44px;border-radius:11px;background:#fff;border:2px dashed rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font:900 16px 'Inter Tight';color:rgba(0,0,0,.3)">?</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+            <div style="font:900 13px 'Inter Tight';color:#1a1a1a" data-i18n="profil_history">Historique récent</div>
+            <div style="font:600 10px 'JetBrains Mono';color:#ff5a3c;letter-spacing:.1em" data-i18n="profil_all_2">TOUT →</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:28px;height:28px;border-radius:8px;background:#a8f5c6;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 12px 'Inter Tight'">✓</div>
+              <div style="flex:1"><div style="font:800 12px 'Inter Tight';color:#1a1a1a">Erling Haaland</div><div style="font:600 9px 'JetBrains Mono';color:rgba(0,0,0,.5)">Trouvé au 3ᵉ club · +2 💎</div></div>
+              <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.4)">AUJ.</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:28px;height:28px;border-radius:8px;background:#a8f5c6;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 12px 'Inter Tight'">✓</div>
+              <div style="flex:1"><div style="font:800 12px 'Inter Tight';color:#1a1a1a">Kylian Mbappé</div><div style="font:600 9px 'JetBrains Mono';color:rgba(0,0,0,.5)">Trouvé au 1ᵉʳ club · +3 💎</div></div>
+              <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.4)">HIER</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:#ffd6d0;border:2px solid #1a1a1a;border-radius:12px">
+              <div style="width:28px;height:28px;border-radius:8px;background:#fff;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 12px 'Inter Tight'">✕</div>
+              <div style="flex:1"><div style="font:800 12px 'Inter Tight';color:#1a1a1a">Cristiano Ronaldo</div><div style="font:600 9px 'JetBrains Mono';color:rgba(0,0,0,.5)">Raté · streak stoppé</div></div>
+              <div style="font:700 9px 'JetBrains Mono';color:rgba(0,0,0,.4)">-2j</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FRIENDS -->
+    <div class="app-screen" data-screen="friends">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:14px 20px 4px;display:flex;align-items:center;gap:10px">
+          <button type="button" data-nav="league" style="font:800 22px 'Inter Tight';color:#1a1a1a;background:none;border:none;cursor:pointer">←</button>
+          <div style="font:900 24px 'Inter Tight';color:#1a1a1a;letter-spacing:-.02em" data-i18n="friends_title">Mes amis</div>
+        </div>
+
+        <div style="padding:12px 20px 4px">
+          <div style="display:flex;gap:8px">
+            <input type="text" placeholder="Code ou @pseudo d'un ami" data-i18n-placeholder="friends_input_placeholder" style="flex:1;padding:12px 14px;border:2px solid #1a1a1a;border-radius:12px;font:700 13px 'Inter Tight';box-sizing:border-box"/>
+            <button type="button" style="padding:0 18px;background:#ff5a3c;color:#fff;border:2px solid #1a1a1a;border-radius:12px;font:900 12px 'Inter Tight';cursor:pointer" data-i18n="friends_add">Ajouter</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;background:#fff;border:2px dashed rgba(0,0,0,.25);border-radius:12px">
+            <div style="font-size:18px">🔗</div>
+            <div style="flex:1;font:600 11px 'Space Grotesk';color:rgba(0,0,0,.6)"><span data-i18n="friends_your_code">Ton code ami :</span> <strong style="color:#1a1a1a">STRIKR-V0US7</strong></div>
+            <button type="button" style="padding:5px 10px;background:#1a1a1a;color:#fff;border-radius:99px;font:800 10px 'JetBrains Mono';cursor:pointer" data-i18n="friends_copy">Copier</button>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow:auto;padding:14px 20px 20px">
+          <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.45);letter-spacing:.14em;margin-bottom:8px">3 <span data-i18n="friends_list_header">AMIS</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="rise-1" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+              <div style="width:40px;height:40px;border-radius:99px;background:#ffe66b;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 15px 'Inter Tight';color:#1a1a1a">Y</div>
+              <div style="flex:1"><div style="font:900 13px 'Inter Tight';color:#1a1a1a">Yanis</div><div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.55)">🔥 8 · a trouvé en 1 essai · 2 min</div></div>
+              <div style="width:8px;height:8px;background:#a8f5c6;border-radius:99px;border:1.5px solid #1a1a1a"></div>
+            </div>
+            <div class="rise-2" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+              <div style="width:40px;height:40px;border-radius:99px;background:#2a6f4d;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 15px 'Inter Tight';color:#fff">T</div>
+              <div style="flex:1"><div style="font:900 13px 'Inter Tight';color:#1a1a1a">Théo</div><div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.55)">🔥 3 · badge débloqué · 1h</div></div>
+              <div style="width:8px;height:8px;background:rgba(0,0,0,.15);border-radius:99px;border:1.5px solid #1a1a1a"></div>
+            </div>
+            <div class="rise-3" style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid #1a1a1a;border-radius:14px;box-shadow:3px 3px 0 #1a1a1a">
+              <div style="width:40px;height:40px;border-radius:99px;background:#7a2b52;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 15px 'Inter Tight';color:#fff">S</div>
+              <div style="flex:1"><div style="font:900 13px 'Inter Tight';color:#1a1a1a">Sofia</div><div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.55)">🔥 12 · hors ligne · hier</div></div>
+              <div style="width:8px;height:8px;background:rgba(0,0,0,.15);border-radius:99px;border:1.5px solid #1a1a1a"></div>
+            </div>
+          </div>
+
+          <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.45);letter-spacing:.14em;margin:18px 0 8px" data-i18n="friends_suggestions">SUGGESTIONS</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#fff;border:2px solid rgba(0,0,0,.12);border-radius:14px">
+              <div style="width:40px;height:40px;border-radius:99px;background:#c9d8ff;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 15px 'Inter Tight';color:#1a1a1a">M</div>
+              <div style="flex:1"><div style="font:900 13px 'Inter Tight';color:#1a1a1a">Maëlys</div><div style="font:600 10px 'Space Grotesk';color:rgba(0,0,0,.5)">2 <span data-i18n="friends_common">amis en commun</span></div></div>
+              <button type="button" style="padding:6px 12px;background:#fff;border:2px solid #1a1a1a;border-radius:99px;font:800 10px 'Inter Tight';cursor:pointer" data-i18n="friends_add">Ajouter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="app-screen" data-screen="settings">
+      <div style="height:100%;background:#fff8ee;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="height:env(safe-area-inset-top);flex-shrink:0"></div>
+        <div style="padding:14px 20px 4px;display:flex;align-items:center;gap:10px">
+          <button type="button" data-nav="profil" style="font:800 22px 'Inter Tight';color:#1a1a1a;background:none;border:none;cursor:pointer">←</button>
+          <div style="font:900 24px 'Inter Tight';color:#1a1a1a;letter-spacing:-.02em" data-i18n="settings_title">Paramètres</div>
+        </div>
+        <div style="flex:1;overflow:auto;padding:14px 20px 20px;display:flex;flex-direction:column;gap:16px">
+
+          <div>
+            <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.45);letter-spacing:.14em;margin-bottom:6px" data-i18n="settings_account">COMPTE</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="width:36px;height:36px;border-radius:99px;background:#ffe66b;border:1.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font:900 14px 'Inter Tight'">V</div>
+                <div style="flex:1"><div style="font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="league_you">Vous</div><div style="font:600 10px 'JetBrains Mono';color:rgba(0,0,0,.5)" data-i18n="settings_connected_via">Connecté via  Apple</div></div>
+                <div style="font:700 11px 'Inter Tight';color:#ff5a3c" data-i18n="settings_edit">Modifier</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.45);letter-spacing:.14em;margin-bottom:6px" data-i18n="settings_prefs">PRÉFÉRENCES</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div class="settings-row" data-toggle="notif" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="font-size:18px">🔔</div>
+                <div style="flex:1;font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_notif">Notifications push</div>
+                <div class="settings-switch" style="width:42px;height:24px;border-radius:99px;background:#a8f5c6;border:2px solid #1a1a1a;position:relative;cursor:pointer"><div class="settings-knob" style="width:16px;height:16px;border-radius:99px;background:#1a1a1a;position:absolute;top:2px;right:2px;transition:right .15s"></div></div>
+              </div>
+              <div class="settings-row" data-toggle="sound" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="font-size:18px">🔊</div>
+                <div style="flex:1;font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_sound">Sons</div>
+                <div class="settings-switch" style="width:42px;height:24px;border-radius:99px;background:#a8f5c6;border:2px solid #1a1a1a;position:relative;cursor:pointer"><div class="settings-knob" style="width:16px;height:16px;border-radius:99px;background:#1a1a1a;position:absolute;top:2px;right:2px;transition:right .15s"></div></div>
+              </div>
+              <div class="settings-row" data-toggle="haptics" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="font-size:18px">📳</div>
+                <div style="flex:1;font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_haptics">Vibrations</div>
+                <div class="settings-switch" style="width:42px;height:24px;border-radius:99px;background:#a8f5c6;border:2px solid #1a1a1a;position:relative;cursor:pointer"><div class="settings-knob" style="width:16px;height:16px;border-radius:99px;background:#1a1a1a;position:absolute;top:2px;right:2px;transition:right .15s"></div></div>
+              </div>
+              <div id="lang-row" style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px;position:relative">
+                <div style="font-size:18px">🌐</div>
+                <div style="flex:1;font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_language">Langue</div>
+                <button type="button" id="lang-trigger" style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:0;font:700 11px 'JetBrains Mono';color:rgba(0,0,0,.5)"><span id="lang-value">Français</span> ▾</button>
+                <div id="lang-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px;box-shadow:4px 4px 0 #1a1a1a;overflow:hidden;z-index:20;min-width:150px"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px">
+                <div style="font-size:18px">🌙</div>
+                <div style="flex:1;font:800 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_dark_mode">Mode sombre</div>
+                <div id="darkmode-switch" style="width:42px;height:24px;border-radius:99px;background:#f0eadf;border:2px solid #1a1a1a;position:relative;cursor:pointer"><div class="settings-knob" style="width:16px;height:16px;border-radius:99px;background:#1a1a1a;position:absolute;top:2px;right:20px;transition:right .15s"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font:700 10px 'JetBrains Mono';color:rgba(0,0,0,.45);letter-spacing:.14em;margin-bottom:6px" data-i18n="settings_support">SUPPORT</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px"><div style="flex:1;font:700 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_help">Aide &amp; contact</div><div style="color:rgba(0,0,0,.3)">→</div></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #1a1a1a;border-radius:12px"><div style="flex:1;font:700 13px 'Inter Tight';color:#1a1a1a" data-i18n="settings_legal">Conditions &amp; confidentialité</div><div style="color:rgba(0,0,0,.3)">→</div></div>
+            </div>
+          </div>
+
+          <button type="button" style="padding:14px;background:#fff;border:2px solid #ff5a3c;border-radius:12px;font:800 13px 'Inter Tight';color:#ff5a3c;cursor:pointer" data-i18n="settings_logout">Se déconnecter</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="app-tabs">
+    <button type="button" class="app-tab active" data-nav="home"><span class="app-tab-icon">🏠</span><span class="app-tab-label" data-i18n="nav_home">HOME</span></button>
+    <button type="button" class="app-tab" data-nav="missions"><span class="app-tab-icon">🎯</span><span class="app-tab-label" data-i18n="nav_missions">MISSIONS</span></button>
+    <div class="app-tab-center" data-nav="game">⚽</div>
+    <button type="button" class="app-tab" data-nav="league"><span class="app-tab-icon">🏆</span><span class="app-tab-label" data-i18n="nav_league">LEAGUE</span></button>
+    <button type="button" class="app-tab" data-nav="profil"><span class="app-tab-icon">👤</span><span class="app-tab-label" data-i18n="nav_profil">PROFIL</span></button>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+var ONBOARDING_SLIDES = function () {
+  var t = window.STRIKR_t || function (k) { return k; };
+  return [
+    {
+      emoji: '⚽',
+      accent: '#ff5a3c',
+      title: t('ob1_title'),
+      body: t('ob1_body'),
+      visual: [
+        { label: 'Bryne FK', done: true },
+        { label: 'Molde FK', done: true },
+        { label: '?', done: false },
+      ],
+    },
+    {
+      emoji: '🔤',
+      accent: '#2b3ff2',
+      title: t('ob2_title'),
+      body: t('ob2_body'),
+      visual: null,
+    },
+    {
+      emoji: '💎',
+      accent: '#ffb03c',
+      title: t('ob3_title'),
+      body: t('ob3_body'),
+      visual: null,
+    },
+  ];
+};
+
+class Component extends DCLogic {
+  componentDidMount() {
+    var self = this;
+    this.obIndex = 0;
+    this.setupOnboarding();
+    document.getElementById('app-root').addEventListener('click', function (e) {
+      var t = e.target;
+      while (t && t !== e.currentTarget && !t.getAttribute('data-nav')) t = t.parentElement;
+      var target = t && t.getAttribute && t.getAttribute('data-nav');
+      if (target) self.goTo(target);
+    });
+    document.querySelectorAll('.settings-switch').forEach(function (sw) {
+      var on = true;
+      sw.addEventListener('click', function () {
+        on = !on;
+        sw.style.background = on ? '#a8f5c6' : '#f0eadf';
+        sw.querySelector('.settings-knob').style.right = on ? '2px' : '20px';
+      });
+    });
+    this.setupDarkMode();
+    this.setupLanguage();
+    if (window.STRIKR_applyI18n) window.STRIKR_applyI18n(document);
+    this.updateDiamonds();
+    if (window.STRIKR_onDiamondsChanged) {
+      window.STRIKR_onDiamondsChanged(function () { self.updateDiamonds(); });
+    } else {
+      setTimeout(function () { self.updateDiamonds(); }, 300);
+    }
+  }
+
+  setupLanguage() {
+    var trigger = document.getElementById('lang-trigger');
+    var valueEl = document.getElementById('lang-value');
+    var menu = document.getElementById('lang-menu');
+    if (!trigger || !valueEl || !menu || !window.STRIKR_getLang) return;
+    var langs = window.STRIKR_LANGS || ['fr', 'en', 'es'];
+    var labels = window.STRIKR_LANG_LABELS || {};
+    var current = window.STRIKR_getLang();
+    valueEl.textContent = labels[current] || current;
+
+    menu.innerHTML = langs.map(function (l) {
+      var active = l === current;
+      return '<button type="button" data-lang="' + l + '" style="display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:' + (active ? '#ffe66b' : '#fff') + ';border:none;border-bottom:1px solid rgba(0,0,0,.08);font:700 12px \'Inter Tight\';color:#1a1a1a;cursor:pointer;text-align:left">' +
+        (labels[l] || l) + (active ? '<span>✓</span>' : '') + '</button>';
+    }).join('');
+
+    function closeMenu() { menu.style.display = 'none'; }
+    function openMenu() { menu.style.display = 'block'; }
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      menu.style.display === 'block' ? closeMenu() : openMenu();
+    });
+    menu.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-lang]');
+      if (!btn) return;
+      var next = btn.getAttribute('data-lang');
+      if (next === current) { closeMenu(); return; }
+      window.STRIKR_setLang(next); // reloads the page with the new language
+    });
+    document.addEventListener('click', closeMenu);
+  }
+
+  setupDarkMode() {
+    var screens = document.getElementById('app-screens');
+    var tabs = document.getElementById('app-tabs');
+    var sw = document.getElementById('darkmode-switch');
+    var knob = sw ? sw.querySelector('.settings-knob') : null;
+    var on = false;
+    try { on = localStorage.getItem('strikr_dark_mode') === '1'; } catch (e) {}
+
+    // NOTE: by the time we read el.style back, this DC's rendering layer has
+    // already normalized inline colors to rgb()/rgba() — matching on the
+    // authored hex strings never works. So this operates on the live
+    // CSSStyleDeclaration (backgroundColor/backgroundImage/color/borderColor/
+    // boxShadow) and compares parsed RGB triples instead of raw text.
+    var CREAM = [255,248,238], WHITE = [255,255,255], TRACK = [240,234,223], INK = [26,26,26];
+    // Colorful "pop" surfaces (chips, badges, gradients) are left completely
+    // untouched — they already read fine on any background, and STRIKR's
+    // sticker-book look depends on them staying vivid.
+    var SKIP_RGBS = [[255,230,107],[168,245,198],[255,202,224],[201,216,255],[255,214,208],[255,90,60],[43,63,242],[122,43,82],[42,111,77],[255,176,60]];
+
+    function parseRGB(str) {
+      if (!str) return null;
+      var m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/.exec(str);
+      return m ? [parseInt(m[1],10), parseInt(m[2],10), parseInt(m[3],10)] : null;
+    }
+    function sameRGB(a, b) { return !!a && !!b && a[0]===b[0] && a[1]===b[1] && a[2]===b[2]; }
+
+    function shouldSkip(el) {
+      if (el.closest && el.closest('#strikr-win')) return true; // celebration screen keeps its own bright treatment always
+      if (el.closest && el.closest('[data-dm-pop]')) return true; // text/borders inside an already-vivid card stay as authored
+      var bgImg = el.style.backgroundImage;
+      var hasRealGradient = bgImg && bgImg !== 'none' && bgImg !== 'initial' && bgImg.indexOf('repeating-linear-gradient') === -1;
+      if (hasRealGradient) { el.setAttribute('data-dm-pop', '1'); return true; } // any real gradient (avatar ring, win-screen, decorative) stays vivid
+      var bg = parseRGB(el.style.backgroundColor);
+      var isPop = bg ? SKIP_RGBS.some(function (rgb) { return sameRGB(bg, rgb); }) : false;
+      if (isPop) el.setAttribute('data-dm-pop', '1');
+      return isPop;
+    }
+
+    function applyToElement(el) {
+      if (!el.style) return;
+      if (!el.__dmOrig) {
+        el.__dmOrig = { bg: el.style.backgroundColor, bgImg: el.style.backgroundImage, color: el.style.color, borderColor: el.style.borderColor, boxShadow: el.style.boxShadow };
+      }
+      if (shouldSkip(el)) return;
+      var o = el.__dmOrig;
+      var bgRgb = parseRGB(o.bg);
+      if (sameRGB(bgRgb, CREAM)) el.style.backgroundColor = 'rgb(21,19,15)';
+      else if (sameRGB(bgRgb, WHITE)) el.style.backgroundColor = 'rgb(33,29,23)';
+      else if (sameRGB(bgRgb, TRACK)) el.style.backgroundColor = 'rgb(42,37,28)';
+
+      if (o.bgImg && o.bgImg.indexOf('repeating-linear-gradient') > -1) {
+        el.style.backgroundImage = 'repeating-linear-gradient(45deg, rgb(28,24,18), rgb(28,24,18) 6px, rgb(36,32,25) 6px, rgb(36,32,25) 12px)';
+      }
+
+      if (sameRGB(parseRGB(o.color), INK)) el.style.color = 'rgb(240,233,216)';
+      else if (o.color && /rgba\(\s*0,\s*0,\s*0,/.test(o.color)) el.style.color = o.color.replace(/rgba\(\s*0,\s*0,\s*0,\s*([\d.]+)\s*\)/, 'rgba(255,255,255,$1)');
+
+      if (sameRGB(parseRGB(o.borderColor), INK)) el.style.borderColor = 'rgb(85,80,63)';
+      else if (o.borderColor && /rgba\(\s*0,\s*0,\s*0,/.test(o.borderColor)) el.style.borderColor = o.borderColor.replace(/rgba\(\s*0,\s*0,\s*0,\s*([\d.]+)\s*\)/, 'rgba(255,255,255,$1)');
+
+      if (o.boxShadow) {
+        var newShadow = o.boxShadow.replace(/rgb\(\s*26,\s*26,\s*26\s*\)/g, 'rgb(85,80,63)');
+        if (newShadow !== o.boxShadow) el.style.boxShadow = newShadow;
+      }
+    }
+
+    function revertElement(el) {
+      if (!el.__dmOrig) return;
+      var o = el.__dmOrig;
+      el.style.backgroundColor = o.bg;
+      el.style.backgroundImage = o.bgImg;
+      el.style.color = o.color;
+      el.style.borderColor = o.borderColor;
+      el.style.boxShadow = o.boxShadow;
+      el.removeAttribute('data-dm-pop');
+    }
+
+    function applyAll(root) {
+      if (!root) return;
+      if (root.style) applyToElement(root);
+      if (root.querySelectorAll) root.querySelectorAll('*').forEach(applyToElement);
+    }
+    function revertAll(root) {
+      if (!root) return;
+      if (root.style) revertElement(root);
+      if (root.querySelectorAll) root.querySelectorAll('*').forEach(revertElement);
+    }
+
+    function setMode(nowOn) {
+      on = nowOn;
+      try { localStorage.setItem('strikr_dark_mode', on ? '1' : '0'); } catch (e) {}
+      if (on) { applyAll(screens); applyAll(tabs); } else { revertAll(screens); revertAll(tabs); }
+      if (sw) sw.style.background = on ? '#a8f5c6' : '#f0eadf';
+      if (knob) knob.style.right = on ? '2px' : '20px';
+    }
+
+    setMode(on);
+    if (sw) sw.addEventListener('click', function () { setMode(!on); });
+
+    // strikr-game.js / strikr-daily.js rebuild their containers' innerHTML on
+    // every state change — recolor freshly inserted nodes on the fly while
+    // dark mode is active, so a guess or a hint purchase doesn't flash light.
+    var observer = new MutationObserver(function (mutations) {
+      if (!on) return;
+      mutations.forEach(function (m) {
+        m.addedNodes.forEach(function (node) {
+          if (node.nodeType === 1) applyAll(node);
+        });
+      });
+    });
+    if (screens) observer.observe(screens, { childList: true, subtree: true });
+  }
+
+  setupOnboarding() {
+    var self = this;
+    var ob = document.getElementById('onboarding');
+    var slides = ONBOARDING_SLIDES();
+    var seen = false;
+    try { seen = localStorage.getItem('strikr_onboarding_seen_v1') === '1'; } catch (e) {}
+    if (seen) { ob.style.display = 'none'; return; }
+
+    var dotsHost = document.getElementById('ob-dots');
+    dotsHost.innerHTML = slides.map(function (_, i) {
+      return '<div class="ob-dot" data-i="' + i + '" style="width:8px;height:8px;border-radius:99px;background:' + (i === 0 ? '#1a1a1a' : 'rgba(0,0,0,.15)') + '"></div>';
+    }).join('');
+
+    function renderSlide(i) {
+      var s = slides[i];
+      var host = document.getElementById('ob-slides');
+      var visualHTML = '';
+      if (s.visual) {
+        var lockedLabel = (window.STRIKR_t || function(k){return k;})('ob1_locked_club');
+        visualHTML = '<div style="display:flex;flex-direction:column;gap:6px;margin-top:14px;width:100%;max-width:260px">' + s.visual.map(function (c) {
+          if (c.done) {
+            return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:2px solid #1a1a1a;border-radius:10px;box-shadow:2px 2px 0 #1a1a1a"><div style="width:26px;height:26px;border-radius:7px;background:#a8f5c6;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">✓</div><div style="font:800 12px \'Inter Tight\';color:#1a1a1a">' + c.label + '</div></div>';
+          }
+          return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:repeating-linear-gradient(45deg,#fff8ee,#fff8ee 6px,#f0eadf 6px,#f0eadf 12px);border:2px dashed rgba(0,0,0,.25);border-radius:10px"><div style="width:26px;height:26px;border-radius:7px;background:#fff;border:2px dashed rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font:900 12px \'Inter Tight\';color:rgba(0,0,0,.25);flex-shrink:0">?</div><div style="font:700 12px \'Inter Tight\';color:rgba(0,0,0,.35)">' + lockedLabel + '</div></div>';
+        }).join('') + '</div>';
+      }
+      host.innerHTML =
+        '<div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 28px;text-align:center;box-sizing:border-box">' +
+          '<div style="width:72px;height:72px;border-radius:20px;background:' + s.accent + ';border:2.5px solid #1a1a1a;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:4px 4px 0 #1a1a1a;flex-shrink:0">' + s.emoji + '</div>' +
+          '<div style="font:900 22px \'Inter Tight\';color:#1a1a1a;margin-top:16px;letter-spacing:-.02em">' + s.title + '</div>' +
+          '<div style="font:500 13px/1.45 \'Space Grotesk\';color:rgba(0,0,0,.6);margin-top:8px;max-width:280px">' + s.body + '</div>' +
+          visualHTML +
+        '</div>';
+    }
+
+    function goToSlide(i) {
+      self.obIndex = i;
+      renderSlide(i);
+      dotsHost.querySelectorAll('.ob-dot').forEach(function (d, di) {
+        d.style.background = di === i ? '#1a1a1a' : 'rgba(0,0,0,.15)';
+      });
+      var nextBtn = document.getElementById('ob-next');
+      var t = window.STRIKR_t || function (k) { return k; };
+      nextBtn.textContent = i === slides.length - 1 ? t('onboarding_start') : t('onboarding_next');
+    }
+
+    function finish() {
+      try { localStorage.setItem('strikr_onboarding_seen_v1', '1'); } catch (e) {}
+      ob.style.display = 'none';
+    }
+
+    document.getElementById('ob-next').addEventListener('click', function () {
+      if (self.obIndex >= slides.length - 1) finish();
+      else goToSlide(self.obIndex + 1);
+    });
+    document.getElementById('ob-skip').addEventListener('click', finish);
+
+    goToSlide(0);
+  }
+
+  updateDiamonds() {
+    if (!window.STRIKR_getDiamonds) return;
+    var n = window.STRIKR_getDiamonds();
+    var a = document.getElementById('home-diamonds');
+    var b = document.getElementById('profil-diamonds');
+    if (a) a.textContent = '💎 ' + n;
+    if (b) b.textContent = '💎' + n;
+  }
+
+  goTo(target) {
+    document.querySelectorAll('.app-screen').forEach(function (s) {
+      s.classList.toggle('active', s.getAttribute('data-screen') === target);
+    });
+    document.querySelectorAll('[data-nav]').forEach(function (el) {
+      if (!el.classList.contains('app-tab')) return;
+      el.classList.toggle('active', el.getAttribute('data-nav') === target);
+    });
+    // The center ⚽ button and Home's daily-challenge card can point at
+    // screens that aren't one of the 5 tab-bar destinations (game is both
+    // a tab AND reachable from Home); keep tab highlight sane either way.
+    var tabTargets = ['home', 'missions', 'game', 'league', 'profil'];
+    if (tabTargets.indexOf(target) === -1) return; // e.g. 'settings' or 'daily' — no tab to highlight
+  }
+
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
