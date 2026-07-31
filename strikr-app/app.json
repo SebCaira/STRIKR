@@ -7,14 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.strikr.app",
+      "bundleIdentifier": "com.sebastiencaira.strikr",
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "STRIKR utilise ta photothèque pour te permettre de choisir une photo de profil."
+        "NSPhotoLibraryUsageDescription": "STRIKR utilise ta photothèque pour te permettre de choisir une photo de profil.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.strikr.app",
+      "package": "com.sebastiencaira.strikr",
       "adaptiveIcon": {
         "backgroundColor": "#ff5a3c",
         "foregroundImage": "./assets/android-icon-foreground.png",
