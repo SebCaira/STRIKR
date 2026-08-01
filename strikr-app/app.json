@@ -10,7 +10,8 @@
       "bundleIdentifier": "com.sebastiencaira.strikr",
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "STRIKR utilise ta photothèque pour te permettre de choisir une photo de profil."
+        "NSPhotoLibraryUsageDescription": "STRIKR utilise ta photothèque pour te permettre de choisir une photo de profil.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -40,7 +41,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#fff8ee"
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "owner": "cairasebastien",
     "privacy": "public"
