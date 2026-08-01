@@ -59,7 +59,7 @@ function AppShell() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontsError] = useFonts({
     InterTight_700Bold,
     InterTight_800ExtraBold,
     InterTight_900Black,
@@ -68,12 +68,13 @@ export default function App() {
     JetBrainsMono_500Medium,
     JetBrainsMono_700Bold,
   });
+  const ready = fontsLoaded || !!fontsError;
 
   const onLayout = useCallback(async () => {
-    if (fontsLoaded) await SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+    if (ready) await SplashScreen.hideAsync();
+  }, [ready]);
 
-  if (!fontsLoaded) return null;
+  if (!ready) return null;
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayout}>

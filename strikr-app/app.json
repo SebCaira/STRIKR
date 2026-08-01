@@ -31,6 +31,17 @@
         "projectId": "0d1339ab-631d-4c19-80d7-287300f85a41"
       }
     },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#fff8ee"
+        }
+      ]
+    ],
     "owner": "cairasebastien",
     "privacy": "public",
     "runtimeVersion": {
