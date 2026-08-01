@@ -38,6 +38,11 @@ export function SolvedPlayersProvider({ children }: { children: React.ReactNode 
         setSolvedPlayers(new Set((data?.solved_players as string[] | undefined) || []));
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        setSolvedPlayers(new Set());
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 

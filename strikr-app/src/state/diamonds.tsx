@@ -40,6 +40,11 @@ export function DiamondsProvider({ children }: { children: React.ReactNode }) {
         setDiamonds(data?.diamonds ?? DEFAULT_BALANCE);
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        setDiamonds(DEFAULT_BALANCE);
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 

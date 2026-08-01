@@ -141,6 +141,11 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         setStats({ ...DEFAULT_STATS, ...(data?.stats as Partial<StatsData> | undefined) });
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        setStats(DEFAULT_STATS);
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 
