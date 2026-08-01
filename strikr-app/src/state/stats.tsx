@@ -141,6 +141,14 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         setStats({ ...DEFAULT_STATS, ...(data?.stats as Partial<StatsData> | undefined) });
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        // Falls back to default stats instead of leaving `ready` false
+        // forever (which would strand the app on a blank screen) — real
+        // stats load on the next successful fetch.
+        setStats(DEFAULT_STATS);
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 

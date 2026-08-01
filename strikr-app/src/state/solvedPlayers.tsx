@@ -38,6 +38,13 @@ export function SolvedPlayersProvider({ children }: { children: React.ReactNode 
         setSolvedPlayers(new Set((data?.solved_players as string[] | undefined) || []));
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        // Falls back to an empty collection instead of leaving `ready`
+        // false forever — the real set loads on the next successful fetch.
+        setSolvedPlayers(new Set());
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 

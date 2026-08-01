@@ -40,6 +40,14 @@ export function DiamondsProvider({ children }: { children: React.ReactNode }) {
         setDiamonds(data?.diamonds ?? DEFAULT_BALANCE);
         loadedForUser.current = user.id;
         setReady(true);
+      })
+      .catch(() => {
+        // Falls back to the default balance instead of leaving `ready`
+        // false forever (which would strand the app on a blank screen) —
+        // a real balance loads on the next successful fetch.
+        setDiamonds(DEFAULT_BALANCE);
+        loadedForUser.current = user.id;
+        setReady(true);
       });
   }, [user]);
 
