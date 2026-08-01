@@ -19,23 +19,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setSession(null);
+      setLoading(false);
+    }, 8000);
     supabase.auth
       .getSession()
       .then(({ data }) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
         setSession(data.session);
         setLoading(false);
       })
       .catch(() => {
-        // Getting the stored session failed (e.g. a network hiccup on cold
-        // start) — fall back to "signed out" instead of leaving `loading`
-        // true forever, which would strand the app on a blank screen.
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
         setSession(null);
         setLoading(false);
       });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
