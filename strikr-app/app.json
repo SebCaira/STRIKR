@@ -43,13 +43,6 @@
       ]
     ],
     "owner": "cairasebastien",
-    "privacy": "public",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/0d1339ab-631d-4c19-80d7-287300f85a41",
-      "enabled": false
-    }
+    "privacy": "public"
   }
 }
