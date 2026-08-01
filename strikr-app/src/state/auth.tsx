@@ -26,6 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       })
       .catch(() => {
+        // Getting the stored session failed (e.g. a network hiccup on cold
+        // start) — fall back to "signed out" instead of leaving `loading`
+        // true forever, which would strand the app on a blank screen.
         setSession(null);
         setLoading(false);
       });

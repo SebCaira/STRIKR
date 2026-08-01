@@ -143,6 +143,9 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
       })
       .catch(() => {
+        // Falls back to default stats instead of leaving `ready` false
+        // forever (which would strand the app on a blank screen) — real
+        // stats load on the next successful fetch.
         setStats(DEFAULT_STATS);
         loadedForUser.current = user.id;
         setReady(true);

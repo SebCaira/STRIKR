@@ -40,6 +40,8 @@ export function SolvedPlayersProvider({ children }: { children: React.ReactNode 
         setReady(true);
       })
       .catch(() => {
+        // Falls back to an empty collection instead of leaving `ready`
+        // false forever — the real set loads on the next successful fetch.
         setSolvedPlayers(new Set());
         loadedForUser.current = user.id;
         setReady(true);
