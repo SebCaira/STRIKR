@@ -26,7 +26,6 @@ export default function CollectionScreen() {
   const [selected, setSelected] = useState<Player | null>(null);
 
   const ownedCount = PLAYERS.filter((p) => solvedPlayers.has(p.n)).length;
-  const rarityBorder: Record<CardRarity, string> = { commune: colors.border, rare: accent.blue, legendaire: accent.yellow };
   const rarityBg: Record<CardRarity, string> = { commune: colors.card, rare: accent.blue, legendaire: accent.yellow };
   const rarityText: Record<CardRarity, string> = { commune: colors.ink, rare: '#fff', legendaire: '#1a1a1a' };
 
@@ -54,13 +53,11 @@ export default function CollectionScreen() {
           return (
             <Pressable key={p.n} disabled={!owned} onPress={() => setSelected(p)} style={{ width: 78, alignItems: 'center' }}>
               {owned ? (
-                <View style={{ borderWidth: 3, borderColor: rarityBorder[rarity], borderRadius: 999 }}>
-                  <PlayerPortrait name={p.n} size={64} />
-                </View>
+                <PlayerPortrait name={p.n} size={64} rarity={rarity} />
               ) : (
                 <View
                   style={{
-                    width: 64, height: 64, borderRadius: 999, backgroundColor: colors.card,
+                    width: 64, height: 64, borderRadius: 64 * 0.14, backgroundColor: colors.card,
                     borderWidth: 2, borderColor: colors.muted, borderStyle: 'dashed',
                     alignItems: 'center', justifyContent: 'center',
                   }}
@@ -86,7 +83,7 @@ export default function CollectionScreen() {
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.5)', alignItems: 'center', justifyContent: 'center', padding: 24 }} onPress={() => setSelected(null)}>
           {selected && (
             <Pressable onPress={() => {}} style={{ backgroundColor: colors.bg, borderWidth: 2.5, borderColor: colors.border, borderRadius: 20, padding: 20, maxWidth: 340, width: '100%', alignItems: 'center' }}>
-              <PlayerPortrait name={selected.n} size={100} />
+              <PlayerPortrait name={selected.n} size={100} rarity={cardRarity(selected)} />
               <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink, marginTop: 10, textAlign: 'center' }}>{selected.n}</Text>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <View style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: '#1a1a1a', borderRadius: 999 }}>

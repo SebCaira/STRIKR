@@ -338,7 +338,7 @@ function WinOverlay({
           </View>
 
           <View style={{ paddingHorizontal: 22, paddingTop: 22, alignItems: 'center' }}>
-            <PlayerPortrait name={player.n} size={200} />
+            <PlayerPortrait name={player.n} size={200} rarity={rarity} />
             <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: '#1a1a1a', letterSpacing: 3, marginTop: 16 }}>✦ {t('game_found_at')} {solveOrd} {t('game_found_club')} ✦</Text>
             <Text style={{ fontFamily: fonts.display, fontSize: 26, color: '#1a1a1a', marginTop: 8, textAlign: 'center' }}>
               {firstName} <Text style={{ color: accent.blue }}>{lastName}</Text>
