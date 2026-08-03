@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/i18n';
 import { useDiamonds } from '../state/diamonds';
 import { useStats } from '../state/stats';
 import { deriveMissions } from '../state/missions';
-import { useLeagues } from '../state/leagues';
+import { useFriends } from '../state/friends';
 import { useTotalPlayers } from '../state/appStats';
 import { AVERAGE_CLUBS_PER_PLAYER, PLAYERS } from '../data/players';
 import { useSolvedPlayers } from '../state/solvedPlayers';
@@ -19,21 +19,20 @@ export default function HomeScreen() {
   const { diamonds } = useDiamonds();
   const { stats, derived } = useStats();
   const missions = deriveMissions(stats);
-  const { leagues, refresh: refreshLeagues } = useLeagues();
+  const { friends, refresh: refreshFriends } = useFriends();
   const totalPlayers = useTotalPlayers();
   const { solvedPlayers } = useSolvedPlayers();
   const collectionCount = PLAYERS.filter((p) => solvedPlayers.has(p.n)).length;
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const topLeague = leagues[0];
 
-  // Home/Profil/League all stay mounted as sibling tabs, each with its own
-  // useLeagues() instance — without this, creating/joining a league on the
-  // League tab wouldn't show up here until the app fully reloads.
+  // Home/Profil/Friends all stay mounted as sibling tabs, each with its own
+  // useFriends() instance — without this, adding a friend on the Friends tab
+  // wouldn't show up here until the app fully reloads.
   useFocusEffect(
     useCallback(() => {
-      refreshLeagues();
-    }, [refreshLeagues])
+      refreshFriends();
+    }, [refreshFriends])
   );
 
   return (
@@ -132,23 +131,18 @@ export default function HomeScreen() {
           </HardShadowBox>
 
           <HardShadowBox bg="#1a1a1a" shadowColor={accent.yellow} radius={14} offset={3}>
-            <Pressable onPress={() => navigation.navigate('League')} style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Pressable onPress={() => navigation.navigate('Friends')} style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Text style={{ fontSize: 26 }}>🏆</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: accent.yellow, letterSpacing: 1.4 }}>{t('home_league_kicker')}</Text>
-                {topLeague ? (
-                  <>
-                    <Text style={{ fontFamily: fonts.display, fontSize: 15, color: '#fff', marginTop: 2 }} numberOfLines={1}>{topLeague.name}</Text>
-                    <Text style={{ fontFamily: fonts.body, fontSize: 10, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>
-                      {topLeague.member_count} {t('leagues_members')}{leagues.length > 1 ? ` · +${leagues.length - 1} ${t('home_league_more')}` : ''}
-                    </Text>
-                  </>
+                <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: accent.yellow, letterSpacing: 1.4 }}>{t('home_friends_kicker')}</Text>
+                {friends.length > 0 ? (
+                  <Text style={{ fontFamily: fonts.display, fontSize: 15, color: '#fff', marginTop: 2 }} numberOfLines={1}>
+                    {friends.length} {t('home_friends_count_suffix')}
+                  </Text>
                 ) : (
-                  <>
-                    <Text style={{ fontFamily: fonts.display, fontSize: 15, color: '#fff', marginTop: 2 }}>{t('league_create_or_join')}</Text>
-                    <Text style={{ fontFamily: fonts.body, fontSize: 10, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>{t('home_league_none_sub')}</Text>
-                  </>
+                  <Text style={{ fontFamily: fonts.display, fontSize: 15, color: '#fff', marginTop: 2 }}>{t('friends_add')}</Text>
                 )}
+                <Text style={{ fontFamily: fonts.body, fontSize: 10, color: 'rgba(255,255,255,.7)', marginTop: 1 }}>{t('home_friends_none_sub')}</Text>
               </View>
               <Text style={{ fontFamily: fonts.display, fontSize: 22, color: accent.yellow }}>→</Text>
             </Pressable>

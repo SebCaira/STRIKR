@@ -6,7 +6,6 @@ import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import DailyScreen from '../screens/DailyScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import LeaguesScreen from '../screens/LeaguesScreen';
 import ShopScreen from '../screens/ShopScreen';
 import MissionsScreen from '../screens/MissionsScreen';
 import CollectionScreen from '../screens/CollectionScreen';
@@ -16,7 +15,6 @@ export type RootStackParamList = {
   Tabs: undefined;
   Daily: undefined;
   Settings: undefined;
-  Leagues: undefined;
   Shop: undefined;
   Missions: undefined;
   Collection: undefined;
@@ -45,7 +43,6 @@ export default function RootNavigator() {
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="Daily" component={DailyScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Settings" component={SettingsScreen} options={{ presentation: 'card' }} />
-        <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Shop" component={ShopScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Missions" component={MissionsScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Collection" component={CollectionScreen} options={{ presentation: 'card' }} />

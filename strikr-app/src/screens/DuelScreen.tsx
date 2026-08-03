@@ -29,7 +29,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
   const { duel, loading, myRole, createDuel, inviteDuel, respondInvite, cancelInvite, joinDuel, playCell, passTurn, forfeit, clearFinished, lastReward, rewardedToday, rewardedLimit } = useDuel();
   const rules = useRulesModal('grille');
 
-  // Came here via LeagueScreen's "challenge" button (passed down through the
+  // Came here via FriendsScreen's "challenge" button (passed down through the
   // Jeux hub): send the invite once loading has settled and we know there's
   // no active one already, then tell the hub to clear the param so
   // refocusing this mode later doesn't refire it.

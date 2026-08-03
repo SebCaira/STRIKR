@@ -53,7 +53,7 @@ export default function JeuxScreen() {
   const [selectedMode, setSelectedMode] = useState<ModeId | null>(null);
   const [invite, setInvite] = useState<{ userId: string; userName: string } | null>(null);
 
-  // Deep links from HomeScreen/MissionsScreen ("play now") or LeagueScreen
+  // Deep links from HomeScreen/MissionsScreen ("play now") or FriendsScreen
   // ("challenge this friend") skip straight past the hub and mode picker.
   useEffect(() => {
     if (route.params?.mode === 'game') {

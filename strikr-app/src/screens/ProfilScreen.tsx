@@ -7,7 +7,7 @@ import { useI18n } from '../i18n/i18n';
 import { useDiamonds } from '../state/diamonds';
 import { STREAK_FREEZE_COST, useStats } from '../state/stats';
 import { useAuth } from '../state/auth';
-import { useLeagues } from '../state/leagues';
+import { useFriends } from '../state/friends';
 import { useGameHistory } from '../state/appStats';
 import { useAvatar } from '../state/avatar';
 import { pickAndUploadAvatar } from '../lib/avatarUpload';
@@ -33,7 +33,7 @@ export default function ProfilScreen() {
   const { stats, derived, buyStreakFreeze } = useStats();
   const [freezeMessage, setFreezeMessage] = useState<string | null>(null);
   const { user } = useAuth();
-  const { leagues, refresh: refreshLeagues } = useLeagues();
+  const { friends, refresh: refreshFriends } = useFriends();
   const { history, refresh: refreshHistory } = useGameHistory(5);
   const { avatarUrl, setAvatarUrl, equippedFrame } = useAvatar();
   const { solvedPlayers } = useSolvedPlayers();
@@ -57,13 +57,13 @@ export default function ProfilScreen() {
   };
 
   // Profil stays mounted in the tab navigator, so without this the history
-  // and league count would keep showing whatever they were on first load —
-  // stale after finishing a game or joining a league elsewhere.
+  // and friend count would keep showing whatever they were on first load —
+  // stale after finishing a game or adding a friend elsewhere.
   useFocusEffect(
     useCallback(() => {
       refreshHistory();
-      refreshLeagues();
-    }, [refreshHistory, refreshLeagues])
+      refreshFriends();
+    }, [refreshHistory, refreshFriends])
   );
   const badgeStates = BADGES.map((b) => ({ ...b, unlocked: b.isUnlocked(stats, derived.level) }));
   const unlockedCount = badgeStates.filter((b) => b.unlocked).length;
@@ -116,10 +116,10 @@ export default function ProfilScreen() {
           </View>
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
             <Pressable
-              onPress={() => navigation.getParent()?.navigate('Leagues')}
+              onPress={() => navigation.navigate('Friends')}
               style={{ paddingVertical: 8, paddingHorizontal: 16, backgroundColor: accent.blue, borderWidth: 2, borderColor: colors.border, borderRadius: 999 }}
             >
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: '#fff' }}>🏆 {t('profil_my_leagues')} · {leagues.length}</Text>
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: '#fff' }}>🏆 {t('profil_my_friends')} · {friends.length}</Text>
             </Pressable>
             <Pressable
               onPress={() => navigation.getParent()?.navigate('Collection')}

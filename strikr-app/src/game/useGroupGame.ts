@@ -1,4 +1,4 @@
-// Shared "race" infra for Groupe (up to 5 league friends) and Duel (1
+// Shared "race" infra for Groupe (up to 5 friends) and Duel (1
 // opponent) modes, across four games: "Devine le joueur" (main), "Devine le
 // club" (club), "Mode Liste" (liste), and "Grille" (grille — each player
 // fills their own copy of the same 3x3 grid, no turns). One creator sets up

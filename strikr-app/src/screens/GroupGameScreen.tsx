@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../state/auth';
-import { useAllLeagueFriends } from '../state/leagues';
+import { useFriends } from '../state/friends';
 import { GroupGameType, useGroupGame } from '../game/useGroupGame';
 import { PLAYERS } from '../data/players';
 import { Level, clubColor, clubInit, matchesGuess, stripAcc } from '../game/engine';
@@ -108,7 +108,7 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
   const insets = useSafeAreaInsets();
   const rules = useRulesModal(variant === 'duel' ? `duel_${gameType}` : 'group');
   const { user } = useAuth();
-  const { friends, hasLeague, loading: friendsLoading } = useAllLeagueFriends();
+  const { friends, loading: friendsLoading } = useFriends();
   const {
     game,
     players,
@@ -409,8 +409,8 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
         <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.ink }}>{t('group_create_title')}</Text>
         <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('group_create_sub')}</Text>
 
-        {!hasLeague && !friendsLoading ? (
-          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 24 }}>{t('group_no_league')}</Text>
+        {!friends.length && !friendsLoading ? (
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 24 }}>{t('group_no_friends')}</Text>
         ) : (
           <>
             <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, letterSpacing: 1, marginTop: 20 }}>

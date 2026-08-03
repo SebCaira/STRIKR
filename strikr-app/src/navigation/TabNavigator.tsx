@@ -4,7 +4,7 @@ import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/b
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import JeuxScreen from '../screens/JeuxScreen';
-import LeagueScreen from '../screens/LeagueScreen';
+import FriendsScreen from '../screens/FriendsScreen';
 import ProfilScreen from '../screens/ProfilScreen';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
@@ -12,11 +12,11 @@ import { useI18n } from '../i18n/i18n';
 export type TabParamList = {
   Home: undefined;
   // mode/inviteUserId/inviteUserName: set by HomeScreen/MissionsScreen (deep
-  // link straight to the main game) or LeagueScreen's "challenge" button
+  // link straight to the main game) or FriendsScreen's "challenge" button
   // (deep link straight to sending a duel invite) so JeuxScreen can jump
   // past its own hub/mode picker.
   Jeux: { mode?: 'game' | 'duel'; inviteUserId?: string; inviteUserName?: string } | undefined;
-  League: undefined;
+  Friends: undefined;
   Profil: undefined;
 };
 
@@ -25,7 +25,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const TAB_META: Record<keyof TabParamList, { icon: string; labelKey: string }> = {
   Home: { icon: '🏠', labelKey: 'nav_home' },
   Jeux: { icon: '🎮', labelKey: '' },
-  League: { icon: '🏆', labelKey: 'nav_league' },
+  Friends: { icon: '🏆', labelKey: 'nav_friends' },
   Profil: { icon: '👤', labelKey: 'nav_profil' },
 };
 
@@ -112,7 +112,7 @@ export default function TabNavigator() {
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <CustomTabBar {...props} />}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Jeux" component={JeuxScreen} />
-      <Tab.Screen name="League" component={LeagueScreen} />
+      <Tab.Screen name="Friends" component={FriendsScreen} />
       <Tab.Screen name="Profil" component={ProfilScreen} />
     </Tab.Navigator>
   );
