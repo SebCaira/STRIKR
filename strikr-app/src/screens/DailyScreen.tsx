@@ -9,6 +9,7 @@ import { MAX_ROWS } from '../game/dailyEngine';
 import { LETTER_HINT_COSTS } from '../game/engine';
 import PlayerPortrait from '../components/PlayerPortrait';
 import { cardRarity } from '../game/cardCollection';
+import { cardRarity } from '../game/cardCollection';
 
 const TILE_COLORS = {
   exact: { bg: '#ffe66b', fg: '#1a1a1a' },
