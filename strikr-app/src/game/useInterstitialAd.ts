@@ -1,20 +1,18 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { INTERSTITIAL_EVERY_N_GAMES, MONETIZATION_LIVE } from '../data/shop';
+import { ADS_LIVE, INTERSTITIAL_EVERY_N_GAMES } from '../data/shop';
+import { showInterstitialAd } from '../lib/ads';
 
 const STORAGE_KEY = 'strikr_games_played_v1';
 
 export function useInterstitialAd() {
-  const [adVisible, setAdVisible] = useState(false);
-  const pendingContinue = useRef<(() => void) | null>(null);
-
   // Called at the end of every round (win or loss). Runs `onContinue`
-  // immediately unless this round is the Nth, in which case the interstitial
-  // is shown first and `onContinue` fires once it's dismissed. Skipped
-  // entirely while monetization isn't live — no fake forced ad break during
-  // the free demo phase.
+  // immediately unless this round is the Nth, in which case a real
+  // interstitial is shown first (the native SDK presents its own full-screen
+  // UI — no in-app modal needed) and `onContinue` fires once it's closed.
+  // Skipped entirely while ads aren't live.
   const recordRoundPlayed = useCallback((onContinue: () => void) => {
-    if (!MONETIZATION_LIVE) {
+    if (!ADS_LIVE) {
       onContinue();
       return;
     }
@@ -22,20 +20,12 @@ export function useInterstitialAd() {
       const count = (Number(raw) || 0) + 1;
       AsyncStorage.setItem(STORAGE_KEY, String(count)).catch(() => {});
       if (count % INTERSTITIAL_EVERY_N_GAMES === 0) {
-        pendingContinue.current = onContinue;
-        setAdVisible(true);
+        showInterstitialAd().then(onContinue);
       } else {
         onContinue();
       }
     });
   }, []);
 
-  const dismissAd = useCallback(() => {
-    setAdVisible(false);
-    const cb = pendingContinue.current;
-    pendingContinue.current = null;
-    if (cb) cb();
-  }, []);
-
-  return { adVisible, recordRoundPlayed, dismissAd };
+  return { recordRoundPlayed };
 }

@@ -11,7 +11,6 @@ import ClubShield from '../components/ClubShield';
 import PlayerPortrait from '../components/PlayerPortrait';
 import HardShadowBox from '../components/HardShadowBox';
 import RevealCard from '../components/RevealCard';
-import InterstitialAd from '../components/InterstitialAd';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import { clubYearsLabel } from '../data/playerClubYears';
@@ -24,7 +23,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { state, diamonds, suggestions, pickPlayer, setGuess, submit, buyHint, skipOrForfeit } = useGameEngine();
-  const { adVisible, recordRoundPlayed, dismissAd } = useInterstitialAd();
+  const { recordRoundPlayed } = useInterstitialAd();
   const { stats } = useStats();
   const rules = useRulesModal('main');
   const [flashDiamonds, setFlashDiamonds] = useState(false);
@@ -247,7 +246,6 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
         {resultSnapshot && <LostOverlay player={resultSnapshot.player} onRetry={() => recordRoundPlayed(() => pickPlayer())} />}
       </Modal>
 
-      <InterstitialAd visible={adVisible} onClose={dismissAd} />
       <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_main_title')} body={t('rules_main_body')} />
     </View>
   );

@@ -5,10 +5,13 @@
 // ShopScreen with a react-native-iap call keyed by `id`; the catalog and
 // diamond amounts stay the same.
 
-// Flip to true once react-native-iap / AdMob are actually wired in (see
-// ACTIVATION.md) — until then, nobody should see a fake ad or fake
-// purchase: ShopScreen shows a "coming soon" placeholder instead, and the
-// forced interstitial never fires.
+// AdMob is wired in (see ACTIVATION.md) — real rewarded ads and the forced
+// interstitial are live.
+export const ADS_LIVE = true;
+
+// react-native-iap isn't wired in yet — until then, nobody should see a fake
+// purchase: ShopScreen's diamond packs show a "coming soon" placeholder
+// instead. Independent of ADS_LIVE (ads and purchases activate separately).
 export const MONETIZATION_LIVE = false;
 
 export interface ShopPackage {
@@ -29,8 +32,5 @@ export const SHOP_PACKAGES: ShopPackage[] = [
 export const REWARDED_AD_DIAMONDS = 15;
 export const REWARDED_AD_PER_DAY = 10;
 
-// Forced interstitial (currently simulated, same as the rewarded ad above —
-// swapping to a real network later only means replacing the countdown modal
-// in InterstitialAd.tsx with an actual AdMob interstitial call).
+// Forced interstitial: shown every Nth round via ads.ts's showInterstitialAd().
 export const INTERSTITIAL_EVERY_N_GAMES = 5;
-export const INTERSTITIAL_COUNTDOWN_S = 5;

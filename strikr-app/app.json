@@ -43,8 +43,19 @@
         }
       ],
       "expo-asset",
-      "react-native-google-mobile-ads",
-      "expo-tracking-transparency"
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-7516626754240121~7782009402",
+          "androidAppId": "ca-app-pub-7516626754240121~7782009402"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Cette autorisation permet d'afficher des publicités plus pertinentes pour toi."
+        }
+      ]
     ],
     "owner": "cairasebastien",
     "privacy": "public"

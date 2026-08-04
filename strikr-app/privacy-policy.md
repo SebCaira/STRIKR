@@ -31,12 +31,12 @@ L'app peut t'envoyer un rappel quotidien local (pour te signaler un défi ou du 
 
 ## Publicité et achats
 
-- **Publicité récompensée** : à ce jour simulée dans l'app (aucune régie publicitaire tierce n'est encore intégrée). Si une vraie régie (ex. Google AdMob) est ajoutée plus tard, cette politique sera mise à jour pour lister le prestataire et les données qu'il collecte (identifiants publicitaires, etc.).
+- **Publicité récompensée et interstitielle** : fournie par **Google AdMob**. Pour te proposer des publicités, AdMob peut collecter des identifiants publicitaires et des données techniques sur ton appareil. Sur iPhone, l'app te demande ton autorisation (App Tracking Transparency) avant toute publicité personnalisée — tu peux refuser sans que ça t'empêche de jouer ou de regarder des pubs (elles seront simplement moins personnalisées). Voir la politique de confidentialité de Google : https://policies.google.com/privacy.
 - **Achats de diamants** : à ce jour simulés (aucun paiement réel n'est débité). Si un vrai système de paiement est activé (Apple/Google), les transactions seront traitées directement par Apple/Google — STRIKR ne stocke aucune donnée de carte bancaire.
 
 ## Tes droits
 
-Tu peux à tout moment consulter, corriger ou supprimer tes données. La suppression de compte est disponible directement dans l'app (Réglages → Supprimer mon compte) : elle efface immédiatement et définitivement ton profil, tes diamants, ton XP, ton historique de parties et tes ligues. Tu peux aussi nous écrire à [ADRESSE E-MAIL DE CONTACT] pour toute autre demande.
+Tu peux à tout moment consulter, corriger ou supprimer tes données. La suppression de compte est disponible directement dans l'app (Réglages → Supprimer mon compte) : elle efface immédiatement et définitivement ton profil, tes diamants, ton XP, ton historique de parties et tes amis. Tu peux aussi nous écrire à [ADRESSE E-MAIL DE CONTACT] pour toute autre demande.
 
 ## Âge minimum
 

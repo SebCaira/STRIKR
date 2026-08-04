@@ -10,7 +10,7 @@ En créant un compte ou en utilisant STRIKR, tu acceptes ces conditions. Si tu n
 
 ## 2. Description du service
 
-STRIKR est un jeu mobile de quiz football (deviner un joueur, un club, des listes à thème, une grille façon morpion) jouable en solo, en duel à deux, ou en groupe jusqu'à 5 joueurs, avec un système de ligues entre amis, de progression (XP, niveaux) et de monnaie virtuelle (diamants).
+STRIKR est un jeu mobile de quiz football (deviner un joueur, un club, des listes à thème, une grille façon morpion) jouable en solo, en duel à deux, ou en groupe jusqu'à 5 joueurs, avec un système d'amis, de progression (XP, niveaux) et de monnaie virtuelle (diamants).
 
 ## 3. Ton compte
 

@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import {
   useFonts,
   InterTight_700Bold,
@@ -31,6 +32,13 @@ function AppShell() {
   const { session, loading } = useAuth();
   const { ready: diamondsReady } = useDiamonds();
   const { ready: statsReady } = useStats();
+
+  // iOS requires this prompt before requesting personalized ads; asking
+  // once the main app content is about to show (not on the auth screen)
+  // keeps it out of the way of first-run signup/login.
+  useEffect(() => {
+    if (session) requestTrackingPermissionsAsync().catch(() => {});
+  }, [session]);
 
   if (loading) {
     return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
