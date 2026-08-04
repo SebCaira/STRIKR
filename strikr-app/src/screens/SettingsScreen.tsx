@@ -12,7 +12,7 @@ import { useDiamonds } from '../state/diamonds';
 import { useStats } from '../state/stats';
 import { supabase } from '../lib/supabase';
 import { isPlaceholderEmail } from '../lib/username';
-import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder } from '../lib/notifications';
+import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, registerPushToken, clearPushToken } from '../lib/notifications';
 import { friendlyError } from '../lib/errors';
 import { AVATAR_FRAMES } from '../data/avatarFrames';
 import AvatarFrame from '../components/AvatarFrame';
@@ -131,6 +131,7 @@ export default function SettingsScreen() {
     if (!v) {
       setNotificationsEnabled(false);
       await cancelDailyReminder();
+      if (user) await clearPushToken(user.id);
       return;
     }
     const granted = await requestNotificationPermission();
@@ -140,6 +141,7 @@ export default function SettingsScreen() {
     }
     setNotificationsEnabled(true);
     await scheduleDailyReminder(t('notif_reminder_title'), t('notif_reminder_body'));
+    if (user) await registerPushToken(user.id);
   };
 
   const saveRecoveryEmail = async () => {

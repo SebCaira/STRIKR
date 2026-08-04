@@ -4,7 +4,7 @@
 // without needing a React context.
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder } from '../lib/notifications';
+import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, registerPushToken } from '../lib/notifications';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from './auth';
 
@@ -69,7 +69,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (!loaded || !user) return;
     if (settings.notificationsEnabled) {
       requestNotificationPermission().then((granted) => {
-        if (granted) scheduleDailyReminder(t('notif_reminder_title'), t('notif_reminder_body'));
+        if (granted) {
+          scheduleDailyReminder(t('notif_reminder_title'), t('notif_reminder_body'));
+          registerPushToken(user.id);
+        }
       });
     } else {
       cancelDailyReminder();
