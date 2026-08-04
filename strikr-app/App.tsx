@@ -4,6 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
+import { MONETIZATION_LIVE } from './src/data/shop';
+import { initIAP } from './src/lib/iap';
 import {
   useFonts,
   InterTight_700Bold,
@@ -38,6 +40,12 @@ function AppShell() {
   // keeps it out of the way of first-run signup/login.
   useEffect(() => {
     if (session) requestTrackingPermissionsAsync().catch(() => {});
+  }, [session]);
+
+  // Only connects to the store once purchases are actually live — no point
+  // opening a StoreKit connection while ShopScreen still shows "coming soon".
+  useEffect(() => {
+    if (session && MONETIZATION_LIVE) initIAP();
   }, [session]);
 
   if (loading) {
