@@ -20,8 +20,12 @@ const STORAGE_KEY = 'strikr_clubs_quiz_rewards_v1';
 // Players with too few distinct clubs would make for a trivially short round.
 const ELIGIBLE_PLAYERS = PLAYERS.filter((p) => new Set(p.clubs).size >= 3);
 
+// Letters only: the on-screen keyboard has no hyphen/apostrophe/digit keys,
+// but plenty of real club names do ("Paris Saint-Germain", "Al-Nassr",
+// "Newell's Old Boys", "Schalke 04") — without this, those clubs could
+// never be typed correctly, no matter what you entered.
 function norm(s: string): string {
-  return stripAcc(s.trim().toLowerCase());
+  return stripAcc(s.toLowerCase()).replace(/[^a-z]/g, '');
 }
 
 function todayStr(): string {

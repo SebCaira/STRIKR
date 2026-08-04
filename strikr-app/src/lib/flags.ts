@@ -5,6 +5,7 @@
 // an explicit flag.
 const SPECIAL_FLAGS: Record<string, string> = {
   EN: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  WAL: '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
 };
 
 export function flagEmoji(code: string): string {

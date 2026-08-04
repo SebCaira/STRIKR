@@ -125,6 +125,8 @@ export const NAT_FR: Record<string, string> = {
   SN: 'SÉNÉGAL', DZ: 'ALGÉRIE', MA: 'MAROC', GA: 'GABON', CI: "CÔTE D'IVOIRE", CM: 'CAMEROUN', GH: 'GHANA',
   GN: 'GUINÉE', NL: 'PAYS-BAS', IT: 'ITALIE', RS: 'SERBIE', GE: 'GÉORGIE', NG: 'NIGERIA', SE: 'SUÈDE',
   PY: 'PARAGUAY', CO: 'COLOMBIE', CA: 'CANADA', SI: 'SLOVÉNIE', UA: 'UKRAINE',
+  WAL: 'PAYS DE GALLES', JP: 'JAPON', AU: 'AUSTRALIE', US: 'ÉTATS-UNIS', TG: 'TOGO', EC: 'ÉQUATEUR',
+  HU: 'HONGRIE', TR: 'TURQUIE', CH: 'SUISSE', DK: 'DANEMARK', CL: 'CHILI', CR: 'COSTA RICA',
 };
 
 export const POS_FR: Record<string, string> = { GK: 'GARDIEN', DF: 'DÉFENSEUR', MF: 'MILIEU', AT: 'ATTAQUANT' };
