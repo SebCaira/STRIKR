@@ -42,7 +42,9 @@
           "backgroundColor": "#fff8ee"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "react-native-google-mobile-ads",
+      "expo-tracking-transparency"
     ],
     "owner": "cairasebastien",
     "privacy": "public"
