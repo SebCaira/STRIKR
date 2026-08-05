@@ -16,8 +16,10 @@ import ClubGuessScreen from './ClubGuessScreen';
 import QuizListScreen from './QuizListScreen';
 import GroupGameScreen from './GroupGameScreen';
 import ClubsQuizScreen from './ClubsQuizScreen';
+import XIDuelScreen from './XIDuelScreen';
+import { XI_MATCHES } from '../data/xiMatches';
 
-type GameId = 'main' | 'grille' | 'club' | 'liste' | 'clubsquiz';
+type GameId = 'main' | 'grille' | 'club' | 'liste' | 'clubsquiz' | 'xi';
 type ModeId = 'solo' | 'duel' | 'group';
 
 interface GameDef {
@@ -34,6 +36,11 @@ const GAMES: GameDef[] = [
   { id: 'club', icon: '🏟️', labelKey: 'jeux_game_club', descKey: 'jeux_game_club_desc', modes: { solo: true, duel: true, group: true } },
   { id: 'liste', icon: '📝', labelKey: 'jeux_game_liste', descKey: 'jeux_game_liste_desc', modes: { solo: true, duel: true, group: true } },
   { id: 'clubsquiz', icon: '🔄', labelKey: 'jeux_game_clubs_quiz', descKey: 'jeux_game_clubs_quiz_desc', modes: { solo: true, duel: false, group: false } },
+  // Hidden from the hub until XI_MATCHES actually has match data — no point
+  // shipping a visibly empty game mode.
+  ...(XI_MATCHES.length > 0
+    ? [{ id: 'xi' as const, icon: '🎽', labelKey: 'jeux_game_xi', descKey: 'jeux_game_xi_desc', modes: { solo: true, duel: true, group: true } }]
+    : []),
 ];
 
 const MODE_META: Record<ModeId, { icon: string; labelKey: string }> = {
@@ -104,6 +111,9 @@ export default function JeuxScreen() {
     }
     if (selectedGame === 'grille' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="grille" variant="group" />;
     if (selectedGame === 'clubsquiz' && selectedMode === 'solo') return <ClubsQuizScreen onBack={backToModes} />;
+    if (selectedGame === 'xi' && selectedMode === 'solo') return <QuizListScreen onBack={backToModes} pool="xi" />;
+    if (selectedGame === 'xi' && selectedMode === 'duel') return <XIDuelScreen onBack={backToModes} />;
+    if (selectedGame === 'xi' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" listPool="xi" />;
   }
 
   // Mode picker for the selected game.

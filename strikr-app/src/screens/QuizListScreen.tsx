@@ -6,9 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useQuizList } from '../game/useQuizList';
-import { QUIZ_LISTS, QuizDifficulty, playerFull } from '../data/quizLists';
+import { QUIZ_LISTS, QuizDifficulty, playerFull, playerPhoto } from '../data/quizLists';
+import { XI_MATCHES } from '../data/xiMatches';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
+import PlayerPortrait from '../components/PlayerPortrait';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
@@ -21,17 +23,23 @@ const DIFFICULTY_META: Record<QuizDifficulty, { icon: string; labelKey: string; 
 
 type Step = 'difficulty' | 'themes' | 'time' | 'playing';
 
-export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
+// pool='xi' reuses this exact same screen/engine for "XI Type" (name a
+// famous match's starting eleven) instead of "Mode Liste" (name a themed
+// squad/roster) — the only real differences are: no difficulty tier (there
+// just aren't enough XI matches yet to split into easy/medium/hard) and a
+// different rules/data source.
+export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: () => void; pool?: 'squad' | 'xi' }) {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const rules = useRulesModal('liste');
+  const rules = useRulesModal(pool === 'xi' ? 'xi' : 'liste');
   const {
     list, status, timeLeft, foundIndexes, foundCount, totalCount,
     startRound, submitGuess, endRoundEarly, rewardsExhausted, rewardedToday, rewardedLimit, lastReward,
   } = useQuizList();
 
-  const [step, setStep] = useState<Step>('difficulty');
+  const initialStep: Step = pool === 'xi' ? 'themes' : 'difficulty';
+  const [step, setStep] = useState<Step>(initialStep);
   const [difficulty, setDifficulty] = useState<QuizDifficulty | null>(null);
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [answer, setAnswer] = useState('');
@@ -54,14 +62,14 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
   };
 
   const backToHub = () => {
-    setStep('difficulty');
+    setStep(initialStep);
     setDifficulty(null);
     setSelectedListId(null);
     onBack?.();
   };
 
   const restart = () => {
-    setStep('difficulty');
+    setStep(initialStep);
     setDifficulty(null);
     setSelectedListId(null);
     setAnswer('');
@@ -90,6 +98,7 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 6 }}>
           {list.players.map((p, i) => {
             const found = foundIndexes.includes(i);
+            const photo = playerPhoto(p);
             return (
               <View
                 key={i}
@@ -98,7 +107,11 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
                   backgroundColor: found ? accent.mint : colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 10,
                 }}
               >
-                <Text style={{ fontSize: 13 }}>{found ? '✓' : '✕'}</Text>
+                {photo && found ? (
+                  <PlayerPortrait name={photo} size={24} variant="avatar" />
+                ) : (
+                  <Text style={{ fontSize: 13 }}>{found ? '✓' : '✕'}</Text>
+                )}
                 <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.ink }}>{playerFull(p)}</Text>
               </View>
             );
@@ -109,7 +122,12 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
             <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('quiz_new_round')}</Text>
           </Pressable>
         </View>
-        <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_liste_title')} body={t('rules_liste_body')} />
+        <RulesModal
+          visible={rules.visible}
+          onClose={rules.hide}
+          title={t(pool === 'xi' ? 'rules_xi_title' : 'rules_liste_title')}
+          body={t(pool === 'xi' ? 'rules_xi_body' : 'rules_liste_body')}
+        />
       </View>
     );
   }
@@ -131,11 +149,15 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }} style={{ flex: 1 }}>
-          {foundIndexes.map((i) => (
-            <View key={i} style={{ paddingVertical: 5, paddingHorizontal: 10, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{playerFull(list.players[i])}</Text>
-            </View>
-          ))}
+          {foundIndexes.map((i) => {
+            const photo = playerPhoto(list.players[i]);
+            return (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
+                {photo && <PlayerPortrait name={photo} size={20} variant="avatar" />}
+                <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{playerFull(list.players[i])}</Text>
+              </View>
+            );
+          })}
         </ScrollView>
 
         <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
@@ -187,7 +209,12 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
             </Pressable>
           </View>
         </View>
-        <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_liste_title')} body={t('rules_liste_body')} />
+        <RulesModal
+          visible={rules.visible}
+          onClose={rules.hide}
+          title={t(pool === 'xi' ? 'rules_xi_title' : 'rules_liste_title')}
+          body={t(pool === 'xi' ? 'rules_xi_body' : 'rules_liste_body')}
+        />
       </View>
     );
   }
@@ -211,21 +238,26 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
             </Pressable>
           ))}
         </View>
-        <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_liste_title')} body={t('rules_liste_body')} />
+        <RulesModal
+          visible={rules.visible}
+          onClose={rules.hide}
+          title={t(pool === 'xi' ? 'rules_xi_title' : 'rules_liste_title')}
+          body={t(pool === 'xi' ? 'rules_xi_body' : 'rules_liste_body')}
+        />
       </View>
     );
   }
 
-  // Theme picker.
-  if (step === 'themes' && difficulty) {
-    const themes = QUIZ_LISTS.filter((l) => l.difficulty === difficulty);
+  // Theme picker (or, for pool='xi', the flat match picker — no difficulty tier).
+  if (step === 'themes' && (pool === 'xi' || difficulty)) {
+    const themes = pool === 'xi' ? XI_MATCHES : QUIZ_LISTS.filter((l) => l.difficulty === difficulty);
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14, paddingHorizontal: 20 }}>
-        <Pressable onPress={() => setStep('difficulty')} hitSlop={8} style={{ marginBottom: 10 }}>
+        <Pressable onPress={() => (pool === 'xi' ? backToHub() : setStep('difficulty'))} hitSlop={8} style={{ marginBottom: 10 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.muted }}>← {t('quiz_back')}</Text>
         </Pressable>
         <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.ink }}>
-          {DIFFICULTY_META[difficulty].icon} {t(DIFFICULTY_META[difficulty].labelKey)}
+          {pool === 'xi' ? t('jeux_game_xi') : `${DIFFICULTY_META[difficulty!].icon} ${t(DIFFICULTY_META[difficulty!].labelKey)}`}
         </Text>
         <ScrollView contentContainerStyle={{ marginTop: 16, gap: 8, paddingBottom: 20 }}>
           {themes.map((th) => (
@@ -242,7 +274,12 @@ export default function QuizListScreen({ onBack }: { onBack?: () => void }) {
             </Pressable>
           ))}
         </ScrollView>
-        <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_liste_title')} body={t('rules_liste_body')} />
+        <RulesModal
+          visible={rules.visible}
+          onClose={rules.hide}
+          title={t(pool === 'xi' ? 'rules_xi_title' : 'rules_liste_title')}
+          body={t(pool === 'xi' ? 'rules_xi_body' : 'rules_liste_body')}
+        />
       </View>
     );
   }

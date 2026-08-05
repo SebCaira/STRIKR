@@ -3,8 +3,11 @@
 // source distinguishes two same-surname players in the same list (e.g. two
 // Fofanas) — `base` is what's accepted alone when it's unique in the list,
 // `full` (base + a plain-letter qualifier, no punctuation so it stays
-// typable on the in-app keyboard) is required when it isn't.
-export type QuizPlayer = string | { full: string; base: string };
+// typable on the in-app keyboard) is required when it isn't. `photo`
+// (XI Type only, see data/xiMatches.ts) is the player's real full name for
+// the photo lookup — separate from `full`/`base` since XI Type guesses are
+// short surnames but photos are keyed by full name.
+export type QuizPlayer = string | { full: string; base: string; photo?: string };
 
 export type QuizDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -21,6 +24,10 @@ export function playerFull(p: QuizPlayer): string {
 
 export function playerBase(p: QuizPlayer): string {
   return typeof p === 'string' ? p : p.base;
+}
+
+export function playerPhoto(p: QuizPlayer): string | undefined {
+  return typeof p === 'string' ? undefined : p.photo;
 }
 
 export const QUIZ_LISTS: QuizList[] = [

@@ -7,6 +7,7 @@ import { useStats } from '../state/stats';
 import { fx } from '../lib/fx';
 import { stripAcc } from '../game/engine';
 import { QUIZ_LISTS, QuizList, playerFull, playerBase } from '../data/quizLists';
+import { XI_MATCHES } from '../data/xiMatches';
 
 export type QuizStatus = 'idle' | 'playing' | 'finished';
 
@@ -17,8 +18,11 @@ const REWARD_PER_PLAYER = QUIZ_REWARD_PER_PLAYER;
 const REWARDED_PER_DAY = 5;
 const STORAGE_KEY = 'strikr_quiz_list_rewards_v1';
 
+// Letters only: the on-screen keyboard has no hyphen/apostrophe keys, but
+// real surnames do ("Alexander-Arnold", "Guivarc'h") — without this, those
+// players could never be typed correctly no matter what's entered.
 function norm(s: string): string {
-  return stripAcc(s.trim().toLowerCase());
+  return stripAcc(s.trim().toLowerCase()).replace(/[^a-z]/g, '');
 }
 
 function todayStr(): string {
@@ -93,7 +97,7 @@ export function useQuizList() {
   }, [status, timeLeft, foundIndexes.length, finishRound]);
 
   const startRound = useCallback((listId: string, durationSec: number) => {
-    const found = QUIZ_LISTS.find((l) => l.id === listId);
+    const found = QUIZ_LISTS.find((l) => l.id === listId) || XI_MATCHES.find((l) => l.id === listId);
     if (!found) return;
     setList(found);
     setFoundIndexes([]);

@@ -25,6 +25,7 @@ import { GAME_REWARDED_WINS_PER_DAY, GAME_WIN_XP, Level, rewardFor, tierOf } fro
 import { CLUB_WIN_DIAMONDS_BASE, CLUB_WIN_XP, pickMysteryClub } from './useClubGuess';
 import { QUIZ_REWARD_PER_PLAYER, QUIZ_WIN_XP } from './useQuizList';
 import { QUIZ_LISTS } from '../data/quizLists';
+import { XI_MATCHES } from '../data/xiMatches';
 import { DuelGrid, generateGrid } from './gridDuel';
 
 export type GroupPlayerStatus = 'invited' | 'joined' | 'declined';
@@ -408,7 +409,9 @@ export function useGroupGame() {
   const leaveFinished = useCallback(() => setGame(null), []);
 
   const mysteryPlayer: Player | null = game?.mystery_player ? PLAYERS.find((p) => p.n === game.mystery_player) || null : null;
-  const mysteryList = game?.list_id ? QUIZ_LISTS.find((l) => l.id === game.list_id) || null : null;
+  const mysteryList = game?.list_id
+    ? QUIZ_LISTS.find((l) => l.id === game.list_id) || XI_MATCHES.find((l) => l.id === game.list_id) || null
+    : null;
 
   return {
     game,

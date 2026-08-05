@@ -16,12 +16,14 @@ import { Level, clubColor, clubInit, matchesGuess, stripAcc } from '../game/engi
 import { MAX_GUESSES, ClubGuessRow, compareClubGuess, resolveClubGuess } from '../game/useClubGuess';
 import { matchesCriteria } from '../game/gridDuel';
 import { CLUB_DATA } from '../data/clubData';
-import { QUIZ_LISTS, QuizDifficulty, playerFull, playerBase } from '../data/quizLists';
+import { QUIZ_LISTS, QuizDifficulty, playerFull, playerBase, playerPhoto } from '../data/quizLists';
+import { XI_MATCHES } from '../data/xiMatches';
 import { flagEmoji } from '../lib/flags';
 import { getClubLogo } from '../lib/wikiLookup';
 import ClubShield from '../components/ClubShield';
 import RevealCard from '../components/RevealCard';
 import HardShadowBox from '../components/HardShadowBox';
+import PlayerPortrait from '../components/PlayerPortrait';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 
@@ -38,6 +40,11 @@ interface GroupGameScreenProps {
   onBack?: () => void;
   gameType: GroupGameType;
   variant: 'duel' | 'group';
+  // 'xi' reuses gameType='liste' end to end (same DB game_type, same race
+  // mechanic) but points the creator's list picker at XI_MATCHES ("XI Type")
+  // instead of QUIZ_LISTS ("Mode Liste") — no schema change needed since the
+  // list content itself is client-side data either way.
+  listPool?: 'liste' | 'xi';
 }
 
 function Crest({ name, revealFraction }: { name: string; revealFraction: number }) {
@@ -102,11 +109,11 @@ function ClubGuessChips({ row }: { row: ClubGuessRow }) {
   );
 }
 
-export default function GroupGameScreen({ onBack, gameType, variant }: GroupGameScreenProps) {
+export default function GroupGameScreen({ onBack, gameType, variant, listPool = 'liste' }: GroupGameScreenProps) {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const rules = useRulesModal(variant === 'duel' ? `duel_${gameType}` : 'group');
+  const rules = useRulesModal(listPool === 'xi' ? 'group_xi' : variant === 'duel' ? `duel_${gameType}` : 'group');
   const { user } = useAuth();
   const { friends, loading: friendsLoading } = useFriends();
   const {
@@ -302,18 +309,23 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
     }
   };
 
+  // Letters only: the on-screen keyboard has no hyphen/apostrophe keys, but
+  // real surnames do ("Alexander-Arnold", "Guivarc'h") — without this, those
+  // players could never be typed correctly no matter what's entered.
+  const normListeName = (s: string) => stripAcc(s.toLowerCase()).replace(/[^a-z]/g, '');
+
   const submitListeGuess = () => {
     if (!mysteryList || solved || !game || game.status !== 'active' || !answer.trim()) return;
-    const input = stripAcc(answer.trim().toLowerCase());
+    const input = normListeName(answer.trim());
     const baseCounts = new Map<string, number>();
     mysteryList.players.forEach((p) => {
-      const b = stripAcc(playerBase(p).toLowerCase());
+      const b = normListeName(playerBase(p));
       baseCounts.set(b, (baseCounts.get(b) || 0) + 1);
     });
     const idx = mysteryList.players.findIndex((p, i) => {
       if (foundIndexes.includes(i)) return false;
-      const full = stripAcc(playerFull(p).toLowerCase());
-      const base = stripAcc(playerBase(p).toLowerCase());
+      const full = normListeName(playerFull(p));
+      const base = normListeName(playerBase(p));
       if (input === full) return true;
       if (input === base && (baseCounts.get(base) || 0) === 1) return true;
       return false;
@@ -484,7 +496,7 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
   // Lobby: waiting room.
   if (game.status === 'lobby') {
     const joinedCount = players.filter((p) => p.status === 'joined').length;
-    const listsForDifficulty = QUIZ_LISTS.filter((l) => l.difficulty === listDifficulty);
+    const listsForDifficulty = listPool === 'xi' ? XI_MATCHES : QUIZ_LISTS.filter((l) => l.difficulty === listDifficulty);
     return withBack(
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 60, paddingHorizontal: 20 }}>
         <ScrollView>
@@ -543,18 +555,22 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
 
           {isCreator && gameType === 'liste' && (
             <>
-              <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 6 }}>{t('quiz_choose_difficulty')}</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                {(['easy', 'medium', 'hard'] as QuizDifficulty[]).map((d) => (
-                  <Pressable
-                    key={d}
-                    onPress={() => setListDifficulty(d)}
-                    style={{ flex: 1, paddingVertical: 12, backgroundColor: listDifficulty === d ? accent.coral : colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}
-                  >
-                    <Text style={{ fontFamily: fonts.display, fontSize: 12, color: listDifficulty === d ? '#fff' : colors.ink }}>{t(`quiz_difficulty_${d}`)}</Text>
-                  </Pressable>
-                ))}
-              </View>
+              {listPool !== 'xi' && (
+                <>
+                  <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 6 }}>{t('quiz_choose_difficulty')}</Text>
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                    {(['easy', 'medium', 'hard'] as QuizDifficulty[]).map((d) => (
+                      <Pressable
+                        key={d}
+                        onPress={() => setListDifficulty(d)}
+                        style={{ flex: 1, paddingVertical: 12, backgroundColor: listDifficulty === d ? accent.coral : colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}
+                      >
+                        <Text style={{ fontFamily: fonts.display, fontSize: 12, color: listDifficulty === d ? '#fff' : colors.ink }}>{t(`quiz_difficulty_${d}`)}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              )}
               <View style={{ marginTop: 10, gap: 8 }}>
                 {listsForDifficulty.map((l) => (
                   <Pressable
@@ -786,11 +802,13 @@ export default function GroupGameScreen({ onBack, gameType, variant }: GroupGame
           <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {mysteryList.players.map((p, i) => {
               const found = foundIndexes.includes(i);
+              const photo = found ? playerPhoto(p) : undefined;
               return (
                 <View
                   key={i}
-                  style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: found ? accent.mint : colors.track, borderWidth: 1.5, borderColor: colors.border }}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: found ? accent.mint : colors.track, borderWidth: 1.5, borderColor: colors.border }}
                 >
+                  {photo && <PlayerPortrait name={photo} size={18} variant="avatar" />}
                   <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.ink }}>{found ? playerFull(p) : '?'}</Text>
                 </View>
               );
