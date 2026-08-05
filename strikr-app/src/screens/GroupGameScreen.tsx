@@ -24,6 +24,7 @@ import ClubShield from '../components/ClubShield';
 import RevealCard from '../components/RevealCard';
 import HardShadowBox from '../components/HardShadowBox';
 import PlayerPortrait from '../components/PlayerPortrait';
+import XIPitch from '../components/XIPitch';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 
@@ -799,21 +800,27 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
           <Text style={{ textAlign: 'center', fontFamily: fonts.displayBold, fontSize: 14, color: colors.ink, marginTop: 8 }}>
             {mysteryList.title} · {foundIndexes.length}/{mysteryList.players.length}
           </Text>
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {mysteryList.players.map((p, i) => {
-              const found = foundIndexes.includes(i);
-              const photo = found ? playerPhoto(p) : undefined;
-              return (
-                <View
-                  key={i}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: found ? accent.mint : colors.track, borderWidth: 1.5, borderColor: colors.border }}
-                >
-                  {photo && <PlayerPortrait name={photo} size={18} variant="avatar" />}
-                  <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.ink }}>{found ? playerFull(p) : '?'}</Text>
-                </View>
-              );
-            })}
-          </ScrollView>
+          {listPool === 'xi' ? (
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10 }}>
+              <XIPitch players={mysteryList.players} foundIndexes={foundIndexes} />
+            </ScrollView>
+          ) : (
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {mysteryList.players.map((p, i) => {
+                const found = foundIndexes.includes(i);
+                const photo = found ? playerPhoto(p) : undefined;
+                return (
+                  <View
+                    key={i}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: found ? accent.mint : colors.track, borderWidth: 1.5, borderColor: colors.border }}
+                  >
+                    {photo && <PlayerPortrait name={photo} size={18} variant="avatar" />}
+                    <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.ink }}>{found ? playerFull(p) : '?'}</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
           <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: Math.max(12, insets.bottom + 8) }}>
             <View style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 }}>
               <Text numberOfLines={1} style={{ fontFamily: fonts.displayBold, fontSize: 14, color: answer ? colors.ink : colors.muted }}>{answer || t('game_input_placeholder')}</Text>

@@ -11,6 +11,7 @@ import { XI_MATCHES } from '../data/xiMatches';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import PlayerPortrait from '../components/PlayerPortrait';
+import XIPitch from '../components/XIPitch';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
@@ -148,17 +149,23 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }} style={{ flex: 1 }}>
-          {foundIndexes.map((i) => {
-            const photo = playerPhoto(list.players[i]);
-            return (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-                {photo && <PlayerPortrait name={photo} size={20} variant="avatar" />}
-                <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{playerFull(list.players[i])}</Text>
-              </View>
-            );
-          })}
-        </ScrollView>
+        {pool === 'xi' ? (
+          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10 }} style={{ flex: 1 }}>
+            <XIPitch players={list.players} foundIndexes={foundIndexes} />
+          </ScrollView>
+        ) : (
+          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }} style={{ flex: 1 }}>
+            {foundIndexes.map((i) => {
+              const photo = playerPhoto(list.players[i]);
+              return (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
+                  {photo && <PlayerPortrait name={photo} size={20} variant="avatar" />}
+                  <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{playerFull(list.players[i])}</Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+        )}
 
         <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
           <View style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>

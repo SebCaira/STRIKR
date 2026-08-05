@@ -3,11 +3,12 @@
 // source distinguishes two same-surname players in the same list (e.g. two
 // Fofanas) — `base` is what's accepted alone when it's unique in the list,
 // `full` (base + a plain-letter qualifier, no punctuation so it stays
-// typable on the in-app keyboard) is required when it isn't. `photo`
-// (XI Type only, see data/xiMatches.ts) is the player's real full name for
-// the photo lookup — separate from `full`/`base` since XI Type guesses are
-// short surnames but photos are keyed by full name.
-export type QuizPlayer = string | { full: string; base: string; photo?: string };
+// typable on the in-app keyboard) is required when it isn't. `photo` and
+// `pos` (XI Type only, see data/xiMatches.ts) are the player's real full
+// name for the photo lookup and their on-pitch position (GK/CB/RB/.../CF)
+// for the formation pitch layout — Mode Liste squads have neither and keep
+// the plain chip-list display.
+export type QuizPlayer = string | { full: string; base: string; photo?: string; pos?: string };
 
 export type QuizDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -28,6 +29,10 @@ export function playerBase(p: QuizPlayer): string {
 
 export function playerPhoto(p: QuizPlayer): string | undefined {
   return typeof p === 'string' ? undefined : p.photo;
+}
+
+export function playerPos(p: QuizPlayer): string | undefined {
+  return typeof p === 'string' ? undefined : p.pos;
 }
 
 export const QUIZ_LISTS: QuizList[] = [

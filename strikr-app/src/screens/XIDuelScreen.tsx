@@ -9,12 +9,12 @@ import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { XI_DUEL_TURN_SECONDS, useXIDuel } from '../game/useXIDuel';
 import { XI_MATCHES } from '../data/xiMatches';
-import { playerFull, playerBase, playerPhoto } from '../data/quizLists';
+import { playerFull } from '../data/quizLists';
 import { useFriends } from '../state/friends';
 import { stripAcc } from '../game/engine';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
-import PlayerPortrait from '../components/PlayerPortrait';
+import XIPitch from '../components/XIPitch';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 
@@ -288,25 +288,16 @@ export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }} style={{ flex: 1 }}>
-        {match.players.map((p, i) => {
-          const f = foundByIndex.get(i);
-          if (!f) {
-            return (
-              <View key={i} style={{ paddingVertical: 5, paddingHorizontal: 10, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-                <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.muted }}>?</Text>
-              </View>
-            );
-          }
-          const mine = f.by === myRole;
-          const photo = playerPhoto(p);
-          return (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: mine ? accent.mint : accent.wrongRed, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-              {photo && <PlayerPortrait name={photo} size={20} variant="avatar" />}
-              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{f.name}</Text>
-            </View>
-          );
-        })}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 14 }} style={{ flex: 1 }}>
+        <XIPitch
+          players={match.players}
+          foundIndexes={Array.from(foundByIndex.keys())}
+          colorForIndex={(i) => {
+            const f = foundByIndex.get(i);
+            if (!f) return undefined;
+            return f.by === myRole ? accent.mint : accent.wrongRed;
+          }}
+        />
       </ScrollView>
 
       <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
