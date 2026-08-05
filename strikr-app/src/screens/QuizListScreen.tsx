@@ -8,10 +8,15 @@ import { useI18n } from '../i18n/i18n';
 import { useQuizList } from '../game/useQuizList';
 import { QUIZ_LISTS, QuizDifficulty, playerFull, playerPhoto } from '../data/quizLists';
 import { XI_MATCHES } from '../data/xiMatches';
+import { stripAcc } from '../game/engine';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import PlayerPortrait from '../components/PlayerPortrait';
 import XIPitch from '../components/XIPitch';
+
+function norm(s: string): string {
+  return stripAcc(s.trim().toLowerCase());
+}
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
@@ -50,6 +55,14 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
     setAnswer(next);
     setError(null);
   };
+
+  const suggestions =
+    list && answer.trim().length >= 2
+      ? list.players
+          .filter((_, i) => !foundIndexes.includes(i))
+          .filter((p) => norm(playerFull(p)).includes(norm(answer.trim())))
+          .slice(0, 5)
+      : [];
 
   const submit = () => {
     if (!answer.trim() || status !== 'playing') return;
@@ -173,6 +186,15 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
               {answer || t('quiz_answer_placeholder')}
             </Text>
           </View>
+          {suggestions.length > 0 && (
+            <View style={{ marginTop: 6, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, overflow: 'hidden' }}>
+              {suggestions.map((s) => (
+                <Pressable key={playerFull(s)} onPress={() => updateAnswer(playerFull(s))} style={{ paddingVertical: 8, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,.06)' }}>
+                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>{playerFull(s)}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
           {error && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 8 }}>{error}</Text>}
 
           <View style={{ marginTop: 10, gap: 4 }}>

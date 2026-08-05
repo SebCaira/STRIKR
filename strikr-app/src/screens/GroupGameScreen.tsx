@@ -794,6 +794,13 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
     }
 
     if (gameType === 'liste' && mysteryList) {
+      const listeSuggestions =
+        answer.trim().length >= 2
+          ? mysteryList.players
+              .filter((_, i) => !foundIndexes.includes(i))
+              .filter((p) => stripAcc(playerFull(p).toLowerCase()).includes(stripAcc(answer.trim().toLowerCase())))
+              .slice(0, 5)
+          : [];
       return withBack(
         <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14 }}>
           {timerBar}
@@ -825,6 +832,15 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
             <View style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12 }}>
               <Text numberOfLines={1} style={{ fontFamily: fonts.displayBold, fontSize: 14, color: answer ? colors.ink : colors.muted }}>{answer || t('game_input_placeholder')}</Text>
             </View>
+            {listeSuggestions.length > 0 && (
+              <View style={{ marginTop: 6, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, overflow: 'hidden' }}>
+                {listeSuggestions.map((s) => (
+                  <Pressable key={playerFull(s)} onPress={() => setAnswer(playerFull(s))} style={{ paddingVertical: 8, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,.06)' }}>
+                    <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>{playerFull(s)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
             {error && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 6 }}>{error}</Text>}
             {keyboard}
             <Pressable onPress={submitGuess} style={{ marginTop: 8, paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
