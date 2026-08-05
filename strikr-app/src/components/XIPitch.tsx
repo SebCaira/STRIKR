@@ -63,7 +63,7 @@ export default function XIPitch({
   return (
     <View
       style={{
-        width: '100%', aspectRatio: 0.72, backgroundColor: '#2f9e44',
+        width: '100%', aspectRatio: 1.05, backgroundColor: '#2f9e44',
         borderRadius: 16, borderWidth: 3, borderColor: '#fff', overflow: 'hidden',
       }}
     >
@@ -92,13 +92,13 @@ export default function XIPitch({
           >
             <View
               style={{
-                width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2,
+                width: avatarSize, height: avatarSize, borderRadius: avatarSize * 0.22,
                 backgroundColor: tint,
                 borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
               }}
             >
               {photo ? (
-                <PlayerPortrait name={photo} size={avatarSize} variant="avatar" />
+                <PlayerPortrait name={photo} size={avatarSize} variant="square" />
               ) : (
                 <Text style={{ fontFamily: fonts.displayBold, fontSize: avatarSize * 0.36, color: '#fff' }}>
                   {found ? '' : '?'}
