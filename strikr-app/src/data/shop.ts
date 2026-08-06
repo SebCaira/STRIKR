@@ -1,9 +1,6 @@
-// Diamond packages for the (currently simulated) shop. Prices are display
-// placeholders only — no real payment is taken yet since there's no Apple/
-// Google developer account to register real in-app products with. Swapping
-// to real purchases later only requires replacing the "buy" handler in
-// ShopScreen with a react-native-iap call keyed by `id`; the catalog and
-// diamond amounts stay the same.
+// Diamond packages for the shop. `id` must match the product identifier
+// registered on both App Store Connect and Google Play Console exactly —
+// react-native-iap requests products by this string (see src/lib/iap.ts).
 
 // AdMob is wired in (see ACTIVATION.md), but temporarily OFF: showing a real
 // ad reliably crashes the app (confirmed via real on-device crash reports —
@@ -17,10 +14,13 @@
 // resolved.
 export const ADS_LIVE = false;
 
-// react-native-iap isn't wired in yet — until then, nobody should see a fake
-// purchase: ShopScreen's diamond packs show a "coming soon" placeholder
-// instead. Independent of ADS_LIVE (ads and purchases activate separately).
-export const MONETIZATION_LIVE = false;
+// Real purchases: Paid Apps Agreement signed, banking + tax info done on
+// both App Store Connect and AdMob, and the 4 IAP products exist there
+// (pack_s, pack_m, pack_l, pack_xxl matching SHOP_PACKAGES below). Live now
+// so the real Boutique UI (and its packs) can be screenshotted for each
+// product's required App Store Connect review image. Independent of
+// ADS_LIVE (ads and purchases activate separately).
+export const MONETIZATION_LIVE = true;
 
 export interface ShopPackage {
   id: string;
