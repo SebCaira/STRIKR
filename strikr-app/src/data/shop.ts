@@ -5,9 +5,17 @@
 // ShopScreen with a react-native-iap call keyed by `id`; the catalog and
 // diamond amounts stay the same.
 
-// AdMob is wired in (see ACTIVATION.md) — real rewarded ads and the forced
-// interstitial are live.
-export const ADS_LIVE = true;
+// AdMob is wired in (see ACTIVATION.md), but temporarily OFF: showing a real
+// ad reliably crashes the app (confirmed via real on-device crash reports —
+// ruled out New Architecture, our AdMob account/ad units, and ad-object
+// init timing as causes; looks like an unresolved bug in the ad library
+// itself on this React Native version). Until that's fixed, every ADS_LIVE
+// check below routes to the pre-monetization "instant success" fallback
+// (ShopScreen, useInterstitialAd, useGameEngine's doubleReward) so players
+// still get their reward, just without an actual ad — keeps the app stable
+// for real testers. Flip back to true once the underlying library bug is
+// resolved.
+export const ADS_LIVE = false;
 
 // react-native-iap isn't wired in yet — until then, nobody should see a fake
 // purchase: ShopScreen's diamond packs show a "coming soon" placeholder

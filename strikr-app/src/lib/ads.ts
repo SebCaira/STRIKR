@@ -3,15 +3,11 @@
 // and doesn't care about the AdMob SDK details.
 import mobileAds, { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
 
-// TEMPORARY diagnostic swap: the app crashes (native SIGABRT) every time a
-// real ad is shown, on both the New and legacy architectures — same crash
-// signature either way, so it isn't an architecture issue. Switched to
-// Google's own permanent test ad unit IDs (always valid, never policy-
-// restricted) to find out whether the crash is specific to our real AdMob
-// account/ad units (misconfigured or not yet fully approved) or a deeper
-// bug in the ad library itself, independent of which ad unit is used.
-// Once confirmed working, revert AD_UNIT_IDS back to the real ones below.
-const USE_TEST_ADS = true;
+// Diagnostic conclusion (see shop.ts's ADS_LIVE): swapping to Google's own
+// test ad units made no difference — the crash reproduced identically —
+// which rules out our AdMob account/ad units as the cause. Back to the
+// real ones now that ADS_LIVE is off and neither path is actually called.
+const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
   rewarded: 'ca-app-pub-7516626754240121/7450570987',
