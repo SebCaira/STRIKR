@@ -34,7 +34,7 @@ export const SHOP_PACKAGES: ShopPackage[] = [
   { id: 'pack_s', diamonds: 100, priceLabel: '0,99 €' },
   { id: 'pack_m', diamonds: 350, bonus: 30, priceLabel: '2,99 €', popular: true },
   { id: 'pack_l', diamonds: 900, bonus: 120, priceLabel: '6,99 €' },
-  { id: 'pack_xl', diamonds: 2000, bonus: 400, priceLabel: '14,99 €' },
+  { id: 'pack_xxl', diamonds: 2000, bonus: 400, priceLabel: '14,99 €' },
 ];
 
 export const REWARDED_AD_DIAMONDS = 15;

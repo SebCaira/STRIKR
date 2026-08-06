@@ -23,7 +23,7 @@ Checklist pour le jour où tu as un compte développeur Apple/Google et un compt
 
 ## 2. Vrais paiements (achats de diamants)
 
-1. Dans App Store Connect et Google Play Console, crée un produit IAP consommable par pack de `src/data/shop.ts` (`SHOP_PACKAGES`) — utilise exactement le même `id` (`pack_s`, `pack_m`, `pack_l`, `pack_xl`) comme identifiant produit des deux côtés, pour ne pas avoir à toucher au reste du code.
+1. Dans App Store Connect et Google Play Console, crée un produit IAP consommable par pack de `src/data/shop.ts` (`SHOP_PACKAGES`) — utilise exactement le même `id` (`pack_s`, `pack_m`, `pack_l`, `pack_xxl`) comme identifiant produit des deux côtés, pour ne pas avoir à toucher au reste du code.
 2. `npx expo install react-native-iap`
 3. Au démarrage de l'app, initialise la connexion et enregistre un `purchaseUpdatedListener` (voir doc `react-native-iap`) qui crédite les diamants puis appelle `finishTransaction` — si possible, fais créditer les diamants côté serveur (une fonction Supabase qui vérifie le reçu) plutôt que côté client, pour éviter qu'un achat soit rejoué.
 4. Dans `src/lib/iap.ts`, remplace le corps de `purchasePackage` par `requestPurchase({ sku: packageId })` et résous la promesse une fois le listener confirmé.
