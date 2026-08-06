@@ -8,6 +8,12 @@ export const AD_UNIT_IDS = {
   interstitial: 'ca-app-pub-7516626754240121/2333975671',
 };
 
+// Safety net: if AdMob never fires LOADED or ERROR (seen in practice —
+// ad inventory can be unreliable before the app is publicly listed), the
+// caller would otherwise await forever and the "watch an ad" button would
+// stay stuck on its loading spinner permanently.
+const LOAD_TIMEOUT = 15000;
+
 // Each ad object is single-use (load → show → gone), so a fresh one is
 // created after every show() to have the next ad ready to load.
 let rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);
@@ -21,6 +27,7 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
     const finish = (success: boolean) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeout);
       unsubEarned();
       unsubLoaded();
       unsubClosed();
@@ -28,6 +35,7 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
       rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);
       resolve({ success });
     };
+    const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);
     const unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
       earned = true;
     });
@@ -47,12 +55,14 @@ export async function showInterstitialAd(): Promise<void> {
     const finish = () => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeout);
       unsubLoaded();
       unsubClosed();
       unsubError();
       interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.interstitial);
       resolve();
     };
+    const timeout = setTimeout(finish, LOAD_TIMEOUT);
     const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
       current.show();
     });

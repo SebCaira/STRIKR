@@ -30,6 +30,7 @@ export default function ShopScreen() {
   const [confirmation, setConfirmation] = useState<{ text: string; simulated: boolean } | null>(null);
   const [adWatchedToday, setAdWatchedToday] = useState(0);
   const [adWatching, setAdWatching] = useState(false);
+  const [adError, setAdError] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
 
   useEffect(() => {
@@ -63,6 +64,7 @@ export default function ShopScreen() {
   const watchAd = useCallback(async () => {
     if (!adReady || adWatching) return;
     setAdWatching(true);
+    setAdError(false);
     // The count is persisted immediately (not after the ad finishes), so
     // leaving and re-entering the screen mid-ad can't be used to dodge the
     // daily cap and double up the reward.
@@ -73,7 +75,10 @@ export default function ShopScreen() {
     });
     const { success } = ADS_LIVE ? await showRewardedAd() : { success: true };
     setAdWatching(false);
-    if (!success) return;
+    if (!success) {
+      setAdError(true);
+      return;
+    }
     addDiamonds(REWARDED_AD_DIAMONDS);
     setConfirmation({ text: t('shop_ad_confirmed_prefix') + ' +' + REWARDED_AD_DIAMONDS + ' 💎', simulated: !ADS_LIVE });
   }, [adReady, adWatching, addDiamonds, t]);
@@ -108,6 +113,11 @@ export default function ShopScreen() {
             </View>
           </Pressable>
         </HardShadowBox>
+        {adError && (
+          <Text style={{ fontFamily: fonts.body, fontSize: 11, color: colors.muted, textAlign: 'center' }}>
+            {t('shop_ad_unavailable')}
+          </Text>
+        )}
 
         {MONETIZATION_LIVE ? (
           SHOP_PACKAGES.map((p) => (
