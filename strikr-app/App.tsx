@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import mobileAds from 'react-native-google-mobile-ads';
+import { ensureAdsInitialized } from './src/lib/ads';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { MONETIZATION_LIVE } from './src/data/shop';
 import { initIAP } from './src/lib/iap';
@@ -29,11 +29,11 @@ import AuthScreen from './src/screens/AuthScreen';
 import LevelUpModal from './src/components/LevelUpModal';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-// Required before any ad is loaded/shown — ads.ts creates its RewardedAd/
-// InterstitialAd instances as soon as it's imported, well before a user can
-// reach a "watch an ad" button, so this only needs to fire once, as early
-// as possible, not gated on auth/session.
-mobileAds().initialize().catch(() => {});
+// Kicks off the AdMob SDK init as early as possible, unconditional (not
+// gated on auth/session) — ads.ts itself awaits this same promise before
+// ever creating a RewardedAd/InterstitialAd instance, so by the time a
+// user can reach a "watch an ad" button it's long since resolved.
+ensureAdsInitialized().catch(() => {});
 
 function AppShell() {
   const { colors, dark } = useTheme();
