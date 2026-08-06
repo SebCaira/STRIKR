@@ -1,0 +1,26 @@
+// Diagnostic patch: a second real crash log confirmed the ad crash isn't a
+// New Architecture issue after all — same "uncaught exception during native
+// module invocation" signature shows up identically on the legacy bridge
+// (build 31, New Arch already off). That means it's not fixable from JS
+// with a try/catch (the exception happens asynchronously on a native
+// dispatch queue, after the JS call already returned).
+// To narrow down whether this is specific to our AdMob account/ad units
+// (e.g. not yet fully approved/linked) versus a deeper library bug, this
+// temporarily swaps to Google's own permanent test ad unit IDs (always
+// valid, used by every AdMob developer for testing). If ads work fine with
+// these, the real ad units need fixing on the AdMob console side. If it
+// still crashes even with Google's test units, it's a library-level bug
+// unrelated to our config.
+// Run from strikr-app/: node patch-test-ad-units-diagnostic.js
+const fs = require('fs');
+const path = require('path');
+
+function write(rel, content) {
+  const full = path.join(process.cwd(), rel);
+  fs.writeFileSync(full, content);
+  console.log('WROTE', rel);
+}
+
+write("src/lib/ads.ts", "// Ad adapter — the only place that should know how ads are actually shown.\n// Everything else (ShopScreen, useInterstitialAd) calls these two functions\n// and doesn't care about the AdMob SDK details.\nimport { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';\n\n// TEMPORARY diagnostic swap: the app crashes (native SIGABRT) every time a\n// real ad is shown, on both the New and legacy architectures — same crash\n// signature either way, so it isn't an architecture issue. Switched to\n// Google's own permanent test ad unit IDs (always valid, never policy-\n// restricted) to find out whether the crash is specific to our real AdMob\n// account/ad units (misconfigured or not yet fully approved) or a deeper\n// bug in the ad library itself, independent of which ad unit is used.\n// Once confirmed working, revert AD_UNIT_IDS back to the real ones below.\nconst USE_TEST_ADS = true;\n\nconst REAL_AD_UNIT_IDS = {\n  rewarded: 'ca-app-pub-7516626754240121/7450570987',\n  interstitial: 'ca-app-pub-7516626754240121/2333975671',\n};\n\n// Google's official, permanent test ad units — same for every developer,\n// documented at https://developers.google.com/admob/ios/test-ads.\nconst TEST_AD_UNIT_IDS = {\n  rewarded: 'ca-app-pub-3940256099942544/1712485313',\n  interstitial: 'ca-app-pub-3940256099942544/4411468910',\n};\n\nexport const AD_UNIT_IDS = USE_TEST_ADS ? TEST_AD_UNIT_IDS : REAL_AD_UNIT_IDS;\n\n// Safety net: if AdMob never fires LOADED or ERROR (seen in practice —\n// ad inventory can be unreliable before the app is publicly listed), the\n// caller would otherwise await forever and the \"watch an ad\" button would\n// stay stuck on its loading spinner permanently.\nconst LOAD_TIMEOUT = 15000;\n\n// Each ad object is single-use (load → show → gone), so a fresh one is\n// created after every show() to have the next ad ready to load.\nlet rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);\nlet interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.interstitial);\n\nexport async function showRewardedAd(): Promise<{ success: boolean }> {\n  return new Promise((resolve) => {\n    const current = rewarded;\n    let earned = false;\n    let settled = false;\n    const finish = (success: boolean) => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timeout);\n      unsubEarned();\n      unsubLoaded();\n      unsubClosed();\n      unsubError();\n      rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);\n      resolve({ success });\n    };\n    const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);\n    const unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {\n      earned = true;\n    });\n    const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {\n      current.show();\n    });\n    const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => finish(earned));\n    const unsubError = current.addAdEventListener(AdEventType.ERROR, () => finish(false));\n    current.load();\n  });\n}\n\nexport async function showInterstitialAd(): Promise<void> {\n  return new Promise((resolve) => {\n    const current = interstitial;\n    let settled = false;\n    const finish = () => {\n      if (settled) return;\n      settled = true;\n      clearTimeout(timeout);\n      unsubLoaded();\n      unsubClosed();\n      unsubError();\n      interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.interstitial);\n      resolve();\n    };\n    const timeout = setTimeout(finish, LOAD_TIMEOUT);\n    const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {\n      current.show();\n    });\n    const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, finish);\n    // Failing to load a real ad shouldn't block the game — the round just\n    // continues without an interstitial that round.\n    const unsubError = current.addAdEventListener(AdEventType.ERROR, finish);\n    current.load();\n  });\n}\n");
+
+console.log('Done. Now using Google test ad units — rebuild required to test.');
