@@ -5,6 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { DUEL_TURN_SECONDS, useDuel } from '../game/useDuel';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { PLAYERS } from '../data/players';
 import { stripAcc } from '../game/engine';
 import HardShadowBox from '../components/HardShadowBox';
@@ -27,6 +28,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { duel, loading, myRole, createDuel, inviteDuel, respondInvite, cancelInvite, joinDuel, playCell, passTurn, forfeit, clearFinished, lastReward, rewardedToday, rewardedLimit } = useDuel();
+  const { recordRoundPlayed } = useInterstitialAd();
   const rules = useRulesModal('grille');
 
   // Came here via FriendsScreen's "challenge" button (passed down through the
@@ -277,7 +279,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
             {lastReward > 0 ? `+${lastReward} 💎` : `💎 ${rewardedToday}/${rewardedLimit} ${t('club_rewards_left')}`}
           </Text>
         )}
-        <Pressable onPress={clearFinished} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+        <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
         </Pressable>
       </View>

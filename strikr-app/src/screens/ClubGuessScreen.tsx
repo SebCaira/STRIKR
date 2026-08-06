@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useClubGuess, ClubGuessRow, MAX_GUESSES } from '../game/useClubGuess';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { CLUB_DATA } from '../data/clubData';
 import { stripAcc, clubColor, clubInit } from '../game/engine';
 import { flagEmoji } from '../lib/flags';
@@ -91,6 +92,7 @@ export default function ClubGuessScreen({ onBack }: { onBack?: () => void }) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { mysteryName, guesses, status, attempt, submitGuess, newRound, rewardsExhausted, rewardedToday, rewardedLimit, lastReward } = useClubGuess();
+  const { recordRoundPlayed } = useInterstitialAd();
   const rules = useRulesModal('club');
 
   const [answer, setAnswer] = useState('');
@@ -135,7 +137,7 @@ export default function ClubGuessScreen({ onBack }: { onBack?: () => void }) {
         {status === 'won' && lastReward > 0 && (
           <Text style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.muted }}>+{lastReward} 💎</Text>
         )}
-        <Pressable onPress={newRound} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+        <Pressable onPress={() => recordRoundPlayed(newRound)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('club_new_round')}</Text>
         </Pressable>
         <RulesModal visible={rules.visible} onClose={rules.hide} title={t('rules_club_title')} body={t('rules_club_body')} />

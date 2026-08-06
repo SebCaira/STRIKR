@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { XI_DUEL_TURN_SECONDS, useXIDuel } from '../game/useXIDuel';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { XI_MATCHES } from '../data/xiMatches';
 import { playerFull } from '../data/quizLists';
 import { useFriends } from '../state/friends';
@@ -33,6 +34,7 @@ export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
     inviteXIDuel, respondInvite, cancelInvite, guessName, passTurn, forfeit, clearFinished,
     lastReward, rewardedToday, rewardedLimit,
   } = useXIDuel();
+  const { recordRoundPlayed } = useInterstitialAd();
 
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [inviting, setInviting] = useState<string | null>(null);
@@ -246,7 +248,7 @@ export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
             {lastReward > 0 ? `+${lastReward} 💎` : `💎 ${rewardedToday}/${rewardedLimit} ${t('club_rewards_left')}`}
           </Text>
         )}
-        <Pressable onPress={clearFinished} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+        <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
         </Pressable>
       </View>

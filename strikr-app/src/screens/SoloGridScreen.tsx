@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useSoloGrid } from '../game/useSoloGrid';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { PLAYERS } from '../data/players';
 import { stripAcc } from '../game/engine';
 import ClubShield from '../components/ClubShield';
@@ -18,6 +19,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { state, playCell, newGrid, rewardsExhausted, rewardedToday, rewardedLimit } = useSoloGrid();
+  const { recordRoundPlayed } = useInterstitialAd();
   const rules = useRulesModal('grille');
 
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
@@ -60,7 +62,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
         <Text style={{ fontSize: 48 }}>🏆</Text>
         <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink }}>{t('duel_solo_complete')}</Text>
-        <Pressable onPress={newGrid} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+        <Pressable onPress={() => recordRoundPlayed(newGrid)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_solo_new_grid')}</Text>
         </Pressable>
         <Pressable onPress={onExit} style={{ paddingVertical: 8, paddingHorizontal: 16 }}>

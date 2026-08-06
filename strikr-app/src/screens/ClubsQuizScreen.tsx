@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useClubsQuiz } from '../game/useClubsQuiz';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 
@@ -23,6 +24,7 @@ export default function ClubsQuizScreen({ onBack }: { onBack?: () => void }) {
     player, clubs, status, timeLeft, foundIndexes, foundCount, totalCount,
     startRound, submitGuess, endRoundEarly, lastReward,
   } = useClubsQuiz();
+  const { recordRoundPlayed } = useInterstitialAd();
 
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export default function ClubsQuizScreen({ onBack }: { onBack?: () => void }) {
           })}
         </ScrollView>
         <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
-          <Pressable onPress={restart} style={{ paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
+          <Pressable onPress={() => recordRoundPlayed(restart)} style={{ paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
             <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('quiz_new_round')}</Text>
           </Pressable>
         </View>

@@ -11,6 +11,7 @@ import { useI18n } from '../i18n/i18n';
 import { useAuth } from '../state/auth';
 import { useFriends } from '../state/friends';
 import { GroupGameType, useGroupGame } from '../game/useGroupGame';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { PLAYERS } from '../data/players';
 import { Level, clubColor, clubInit, matchesGuess, stripAcc } from '../game/engine';
 import { MAX_GUESSES, ClubGuessRow, compareClubGuess, resolveClubGuess } from '../game/useClubGuess';
@@ -135,6 +136,7 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
     leaveFinished,
     lastReward,
   } = useGroupGame();
+  const { recordRoundPlayed } = useInterstitialAd();
 
   const maxFriends = variant === 'duel' ? 1 : 4;
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
@@ -998,7 +1000,7 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
           ))}
         </View>
       </ScrollView>
-      <Pressable onPress={() => leaveFinished()} style={{ marginVertical: 12, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
+      <Pressable onPress={() => recordRoundPlayed(leaveFinished)} style={{ marginVertical: 12, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
         <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>{t('group_leave')}</Text>
       </Pressable>
     </View>

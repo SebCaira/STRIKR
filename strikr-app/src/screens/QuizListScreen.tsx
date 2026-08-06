@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useQuizList } from '../game/useQuizList';
+import { useInterstitialAd } from '../game/useInterstitialAd';
 import { QUIZ_LISTS, QuizDifficulty, playerFull, playerPhoto } from '../data/quizLists';
 import { XI_MATCHES } from '../data/xiMatches';
 import { stripAcc } from '../game/engine';
@@ -43,6 +44,7 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
     list, status, timeLeft, foundIndexes, foundCount, totalCount,
     startRound, submitGuess, endRoundEarly, rewardsExhausted, rewardedToday, rewardedLimit, lastReward,
   } = useQuizList();
+  const { recordRoundPlayed } = useInterstitialAd();
 
   const initialStep: Step = pool === 'xi' ? 'themes' : 'difficulty';
   const [step, setStep] = useState<Step>(initialStep);
@@ -132,7 +134,7 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
           })}
         </ScrollView>
         <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
-          <Pressable onPress={restart} style={{ paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
+          <Pressable onPress={() => recordRoundPlayed(restart)} style={{ paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
             <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('quiz_new_round')}</Text>
           </Pressable>
         </View>
