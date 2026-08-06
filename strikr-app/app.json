@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "ios": {
       "bundleIdentifier": "com.sebastiencaira.strikr",
       "supportsTablet": true,
