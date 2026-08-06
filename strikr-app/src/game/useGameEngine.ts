@@ -6,6 +6,8 @@ import { useAuth } from '../state/auth';
 import { useSolvedPlayers } from '../state/solvedPlayers';
 import { supabase } from '../lib/supabase';
 import { fx } from '../lib/fx';
+import { showRewardedAd } from '../lib/ads';
+import { ADS_LIVE } from '../data/shop';
 import { CARD_BONUS_DIAMONDS } from './cardCollection';
 import {
   FORFEIT_COST,
@@ -50,6 +52,7 @@ export interface GameState {
   cardBonus: number;
   isNewCard: boolean;
   rewardCapped: boolean;
+  doubled: boolean;
   animateReveal: boolean;
   lowDiamondsFlash: number;
   roundStartedAt: number | null;
@@ -63,7 +66,7 @@ const nameToIndex = new Map(PLAYERS.map((p, i) => [p.n, i]));
 
 export function useGameEngine() {
   const { diamonds, addDiamonds } = useDiamonds();
-  const { stats, recordWin } = useStats();
+  const { stats, recordWin, addBonusXp } = useStats();
   const { user } = useAuth();
   const { solvedPlayers, markSolved } = useSolvedPlayers();
   // Single shuffled draw pool for the whole roster (not per-level anymore).
@@ -91,6 +94,7 @@ export function useGameEngine() {
     cardBonus: 0,
     isNewCard: false,
     rewardCapped: false,
+    doubled: false,
     animateReveal: false,
     lowDiamondsFlash: 0,
     roundStartedAt: null,
@@ -155,6 +159,7 @@ export function useGameEngine() {
       cardBonus: 0,
       isNewCard: false,
       rewardCapped: false,
+      doubled: false,
       roundStartedAt: Date.now(),
       overflowGuesses: 0,
       pendingEffect: null,
@@ -278,6 +283,25 @@ export function useGameEngine() {
     pickPlayer();
   }, [state.status, state.player, diamonds, flashLowDiamonds, addDiamonds, pickPlayer]);
 
+  // Optional: watch a rewarded ad right after a win to double that round's
+  // diamonds + XP. Deliberately separate from the win's own recordWin() call
+  // (see stats.tsx's addBonusXp) so it can't double-count the win itself —
+  // only the reward amounts are topped up.
+  const [doubling, setDoubling] = useState(false);
+
+  const doubleReward = useCallback(async () => {
+    if (state.status !== 'won' || state.doubled || doubling) return;
+    const total = state.lastReward + state.cardBonus;
+    if (total <= 0) return;
+    setDoubling(true);
+    const { success } = ADS_LIVE ? await showRewardedAd() : { success: true };
+    setDoubling(false);
+    if (!success) return;
+    addDiamonds(total);
+    addBonusXp(GAME_WIN_XP);
+    setState((prev) => (prev.status === 'won' ? { ...prev, doubled: true } : prev));
+  }, [state.status, state.doubled, state.lastReward, state.cardBonus, doubling, addDiamonds, addBonusXp]);
+
   const suggestions = useMemo(() => {
     const q = state.guess.trim().toLowerCase();
     if (q.length < 2 || state.status !== 'playing') return [];
@@ -299,5 +323,7 @@ export function useGameEngine() {
     submit,
     buyHint,
     skipOrForfeit,
+    doubleReward,
+    doubling,
   };
 }

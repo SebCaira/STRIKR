@@ -104,6 +104,10 @@ interface StatsContextValue {
     xpForNextLevel: number;
   };
   recordWin: (opts: RecordWinOptions) => void;
+  // XP-only top-up (e.g. "watch an ad to double your win") — deliberately
+  // does NOT touch solves/totalWins/streak/daily-mission counters, unlike
+  // recordWin, so it can't be mistaken for a second win being recorded.
+  addBonusXp: (xp: number) => void;
   buyStreakFreeze: () => { error: string | null };
   // Set the moment a recordWin() crosses into a new level; a mounted
   // <LevelUpModal /> shows the celebration and calls clearLevelUpEvent()
@@ -236,6 +240,24 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levelUpEvent]);
 
+  const addBonusXp = useCallback(
+    (xp: number) => {
+      setStats((prev) => {
+        const today = todayStr();
+        const xpToday = prev.xpTodayDate === today ? prev.xpToday + xp : xp;
+        const next: StatsData = { ...prev, xp: prev.xp + xp, xpTodayDate: today, xpToday };
+        const prevLevel = levelForXp(prev.xp).level;
+        const nextLevel = levelForXp(next.xp).level;
+        if (nextLevel > prevLevel) setLevelUpEvent(nextLevel);
+        if (user) {
+          supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
+        }
+        return next;
+      });
+    },
+    [user]
+  );
+
   const clearLevelUpEvent = useCallback(() => setLevelUpEvent(null), []);
 
   const buyStreakFreeze = useCallback((): { error: string | null } => {
@@ -260,6 +282,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         stats,
         derived: { firstTryPercent, level, levelProgress: progress, xpIntoLevel, xpForNextLevel: xpForNext },
         recordWin,
+        addBonusXp,
         buyStreakFreeze,
         levelUpEvent,
         clearLevelUpEvent,

@@ -22,7 +22,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const { state, diamonds, suggestions, pickPlayer, setGuess, submit, buyHint, skipOrForfeit } = useGameEngine();
+  const { state, diamonds, suggestions, pickPlayer, setGuess, submit, buyHint, skipOrForfeit, doubleReward, doubling } = useGameEngine();
   const { recordRoundPlayed } = useInterstitialAd();
   const { stats } = useStats();
   const rules = useRulesModal('main');
@@ -236,6 +236,9 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
             cardBonus={resultSnapshot.cardBonus}
             isNewCard={resultSnapshot.isNewCard}
             rewardCapped={resultSnapshot.rewardCapped}
+            doubled={state.doubled}
+            doubling={doubling}
+            onDouble={doubleReward}
             onShare={() => {}}
             onNext={() => recordRoundPlayed(() => pickPlayer())}
           />
@@ -288,6 +291,9 @@ function WinOverlay({
   cardBonus,
   isNewCard,
   rewardCapped,
+  doubled,
+  doubling,
+  onDouble,
   onShare,
   onNext,
 }: {
@@ -299,6 +305,9 @@ function WinOverlay({
   cardBonus: number;
   isNewCard: boolean;
   rewardCapped: boolean;
+  doubled: boolean;
+  doubling: boolean;
+  onDouble: () => void;
   onShare: () => void;
   onNext: () => void;
 }) {
@@ -397,6 +406,26 @@ function WinOverlay({
               <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>{t('game_streak')}</Text>
             </View>
           </View>
+
+          {!rewardCapped && reward + cardBonus > 0 && (
+            <View style={{ paddingHorizontal: 22, paddingTop: 10 }}>
+              {doubled ? (
+                <View style={{ padding: 12, backgroundColor: accent.mint, borderWidth: 2.5, borderColor: '#1a1a1a', borderRadius: 14, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 12, color: '#1a1a1a' }}>{t('game_double_done')}</Text>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={onDouble}
+                  disabled={doubling}
+                  style={{ padding: 12, backgroundColor: '#1a1a1a', borderWidth: 2.5, borderColor: '#1a1a1a', borderRadius: 14, alignItems: 'center', opacity: doubling ? 0.7 : 1 }}
+                >
+                  <Text style={{ fontFamily: fonts.display, fontSize: 12, color: accent.yellow }}>
+                    {doubling ? t('game_double_loading') : `📺 ${t('game_double_cta')} (+💎${reward + cardBonus} · +${GAME_WIN_XP} XP)`}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
 
           <View style={{ paddingHorizontal: 22, paddingTop: 14, flexDirection: 'row', gap: 8 }}>
             <Pressable onPress={onShare} style={{ flex: 1, padding: 14, backgroundColor: '#fff', borderWidth: 2.5, borderColor: '#1a1a1a', borderRadius: 14, alignItems: 'center' }}>
