@@ -1,8 +1,8 @@
 # Conditions générales d'utilisation — STRIKR
 
-_Dernière mise à jour : [DATE]_
+_Dernière mise à jour : 6 août 2026_
 
-> ⚠️ Brouillon de départ, pas un document juridique validé — fais-le relire avant publication, surtout avant d'activer de vrais paiements. Remplace les `[...]` avant de publier.
+> ⚠️ Pas un document juridique validé par un professionnel — fais-le relire avant publication, surtout avant d'activer de vrais paiements. Le nom de l'éditeur ci-dessous devra être mis à jour avec la raison sociale exacte une fois le SIRET obtenu.
 
 ## 1. Acceptation
 
@@ -17,7 +17,7 @@ STRIKR est un jeu mobile de quiz football (deviner un joueur, un club, des liste
 - Tu dois fournir une adresse e-mail valide et garder ton mot de passe confidentiel.
 - Tu es responsable de toute activité effectuée depuis ton compte.
 - Un compte par personne ; ne partage pas ton compte.
-- [ÂGE MINIMUM, ex. "Tu dois avoir au moins 13 ans pour créer un compte."]
+- Tu dois avoir au moins 16 ans (15 ans en France) pour créer un compte, ou disposer de l'accord d'un parent ou tuteur légal en dessous de cet âge.
 
 ## 4. Diamants (monnaie virtuelle)
 
@@ -42,7 +42,7 @@ Les noms de joueurs, clubs et données statistiques utilisés dans le jeu provie
 
 ## 7. Propriété intellectuelle
 
-Le nom STRIKR, son design, son code et ses contenus originaux (hors données footballistiques publiques mentionnées ci-dessus) appartiennent à [NOM DE L'ÉDITEUR]. Tu ne peux pas les copier, redistribuer ou les utiliser à des fins commerciales sans autorisation.
+Le nom STRIKR, son design, son code et ses contenus originaux (hors données footballistiques publiques mentionnées ci-dessus) appartiennent à Sébastien Caira. Tu ne peux pas les copier, redistribuer ou les utiliser à des fins commerciales sans autorisation.
 
 ## 8. Limitation de responsabilité
 
@@ -50,7 +50,7 @@ L'app est fournie "en l'état". On fait de notre mieux pour la maintenir disponi
 
 ## 9. Résiliation
 
-Tu peux supprimer ton compte à tout moment depuis l'app (Réglages → Supprimer mon compte) ou en nous contactant à [ADRESSE E-MAIL DE CONTACT] (voir la politique de confidentialité). On peut suspendre ou clôturer un compte en cas de violation de ces conditions.
+Tu peux supprimer ton compte à tout moment depuis l'app (Réglages → Supprimer mon compte) ou en nous contactant à caira.sebastien@gmail.com (voir la politique de confidentialité). On peut suspendre ou clôturer un compte en cas de violation de ces conditions.
 
 ## 10. Modifications
 
@@ -58,8 +58,8 @@ On peut modifier ces conditions ; la date en haut de page indique la dernière m
 
 ## 11. Droit applicable
 
-Ces conditions sont régies par le droit [PAYS, ex. français]. En cas de litige, [JURIDICTION COMPÉTENTE / mode de résolution amiable].
+Ces conditions sont régies par le droit français. En cas de litige, une solution amiable sera recherchée en priorité ; à défaut, les tribunaux français compétents seront saisis, sous réserve des dispositions légales impératives protectrices du consommateur.
 
 ## 12. Contact
 
-[ADRESSE E-MAIL DE CONTACT]
+caira.sebastien@gmail.com

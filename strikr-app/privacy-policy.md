@@ -1,12 +1,12 @@
 # Politique de confidentialité — STRIKR
 
-_Dernière mise à jour : [DATE]_
+_Dernière mise à jour : 6 août 2026_
 
-> ⚠️ Ce document est un brouillon de départ basé sur ce que l'app collecte réellement aujourd'hui dans le code. Il ne remplace pas un avis juridique — fais-le relire avant de le publier, en particulier avant d'activer de vrais paiements ou une vraie régie publicitaire. Remplace les champs entre crochets `[...]` avant publication.
+> ⚠️ Ce document est basé sur ce que l'app collecte réellement aujourd'hui dans le code. Il ne remplace pas un avis juridique — fais-le relire avant de le publier, en particulier avant d'activer de vrais paiements ou une vraie régie publicitaire. Le nom de l'éditeur ci-dessous devra être mis à jour avec la raison sociale exacte une fois le SIRET obtenu.
 
 ## Qui sommes-nous
 
-STRIKR est éditée par [NOM DE L'ÉDITEUR / AUTO-ENTREPRENEUR / SOCIÉTÉ], contact : [ADRESSE E-MAIL DE CONTACT].
+STRIKR est éditée par Sébastien Caira (entrepreneur individuel, France), contact : caira.sebastien@gmail.com.
 
 ## Quelles données on collecte
 
@@ -36,11 +36,11 @@ L'app peut t'envoyer un rappel quotidien local (pour te signaler un défi ou du 
 
 ## Tes droits
 
-Tu peux à tout moment consulter, corriger ou supprimer tes données. La suppression de compte est disponible directement dans l'app (Réglages → Supprimer mon compte) : elle efface immédiatement et définitivement ton profil, tes diamants, ton XP, ton historique de parties et tes amis. Tu peux aussi nous écrire à [ADRESSE E-MAIL DE CONTACT] pour toute autre demande.
+Tu peux à tout moment consulter, corriger ou supprimer tes données. La suppression de compte est disponible directement dans l'app (Réglages → Supprimer mon compte) : elle efface immédiatement et définitivement ton profil, tes diamants, ton XP, ton historique de parties et tes amis. Tu peux aussi nous écrire à caira.sebastien@gmail.com pour toute autre demande.
 
 ## Âge minimum
 
-STRIKR s'adresse à un public général. Si tu as moins de [15/16 ans selon ton pays — vérifie l'âge de consentement numérique local], demande l'accord d'un parent ou tuteur avant de créer un compte.
+STRIKR s'adresse à un public général. Si tu as moins de 16 ans (15 ans en France), demande l'accord d'un parent ou tuteur avant de créer un compte.
 
 ## Suivi et analytics
 
@@ -52,4 +52,4 @@ On peut mettre à jour cette politique ; la date en haut de page indique la dern
 
 ## Contact
 
-Pour toute question : [ADRESSE E-MAIL DE CONTACT].
+Pour toute question : caira.sebastien@gmail.com.
