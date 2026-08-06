@@ -11,6 +11,10 @@ import { useClubsQuiz } from '../game/useClubsQuiz';
 import { useInterstitialAd } from '../game/useInterstitialAd';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
+import PlayerPortrait from '../components/PlayerPortrait';
+import ClubShield from '../components/ClubShield';
+import RevealCard from '../components/RevealCard';
+import HardShadowBox from '../components/HardShadowBox';
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
@@ -60,11 +64,11 @@ export default function ClubsQuizScreen({ onBack }: { onBack?: () => void }) {
               <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.muted }}>←</Text>
             </Pressable>
           )}
-          <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink, flex: 1 }}>{player.n}</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink, flex: 1 }} numberOfLines={1}>{player.n}</Text>
         </View>
         <View style={{ alignItems: 'center', paddingVertical: 14, gap: 6 }}>
-          <Text style={{ fontSize: 40 }}>🏁</Text>
-          <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.ink }}>
+          <PlayerPortrait name={player.n} size={90} />
+          <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.ink, marginTop: 4 }}>
             {foundCount}/{totalCount} {t('quiz_found')}
           </Text>
           {lastReward > 0 && <Text style={{ fontFamily: fonts.mono, fontSize: 12, color: colors.muted }}>+{lastReward} 💎</Text>}
@@ -100,24 +104,50 @@ export default function ClubsQuizScreen({ onBack }: { onBack?: () => void }) {
   if (status === 'playing' && player) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14 }}>
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink }} numberOfLines={2}>{player.n}</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-            <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>
-              {foundCount}/{totalCount} {t('quiz_found')}
-            </Text>
-            <View style={{ paddingVertical: 3, paddingHorizontal: 8, backgroundColor: timeLeft <= 10 ? accent.wrongRed : colors.track, borderRadius: 999 }}>
-              <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: timeLeft <= 10 ? '#fff' : colors.muted }}>⏱ {timeLeft}s</Text>
-            </View>
+        <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>
+            {foundCount}/{totalCount} {t('quiz_found')}
+          </Text>
+          <View style={{ paddingVertical: 3, paddingHorizontal: 8, backgroundColor: timeLeft <= 10 ? accent.wrongRed : colors.track, borderRadius: 999 }}>
+            <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: timeLeft <= 10 ? '#fff' : colors.muted }}>⏱ {timeLeft}s</Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignContent: 'flex-start' }} style={{ flex: 1 }}>
-          {foundIndexes.map((i) => (
-            <View key={i} style={{ paddingVertical: 5, paddingHorizontal: 10, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: '#1a1a1a' }}>{clubs[i]}</Text>
-            </View>
-          ))}
+        <View style={{ alignItems: 'center', paddingTop: 6, paddingBottom: 4 }}>
+          <PlayerPortrait name={player.n} size={84} />
+          <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink, marginTop: 6 }} numberOfLines={1}>{player.n}</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 4, gap: 5 }} style={{ flex: 1 }}>
+          {clubs.map((c, i) => {
+            const revealed = foundIndexes.includes(i);
+            if (revealed) {
+              return (
+                <RevealCard key={i}>
+                  <HardShadowBox bg={colors.card} radius={12} offset={3} style={{ marginBottom: 5 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6 }}>
+                      <ClubShield name={c} size={36} />
+                      <Text numberOfLines={1} style={{ flex: 1, fontFamily: fonts.display, fontSize: 13, color: colors.ink }}>{c}</Text>
+                      <View style={{ width: 20, height: 20, borderRadius: 999, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontFamily: fonts.display, fontSize: 11, color: colors.ink }}>✓</Text>
+                      </View>
+                    </View>
+                  </HardShadowBox>
+                </RevealCard>
+              );
+            }
+            return (
+              <View
+                key={i}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6, backgroundColor: colors.track, borderWidth: 2, borderColor: 'rgba(0,0,0,.2)', borderStyle: 'dashed', borderRadius: 12, marginBottom: 5 }}
+              >
+                <View style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: colors.card, borderWidth: 2, borderColor: 'rgba(0,0,0,.2)', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.muted }}>?</Text>
+                </View>
+                <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: colors.muted }}>{t('game_locked_club')}</Text>
+              </View>
+            );
+          })}
         </ScrollView>
 
         <View style={{ paddingHorizontal: 20, paddingBottom: Math.max(12, insets.bottom + 8) }}>
