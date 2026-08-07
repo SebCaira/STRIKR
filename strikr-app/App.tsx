@@ -4,7 +4,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { ensureAdsInitialized } from './src/lib/ads';
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { MONETIZATION_LIVE } from './src/data/shop';
 import { initIAP } from './src/lib/iap';
 import {
@@ -40,13 +39,6 @@ function AppShell() {
   const { session, loading } = useAuth();
   const { ready: diamondsReady } = useDiamonds();
   const { ready: statsReady } = useStats();
-
-  // iOS requires this prompt before requesting personalized ads; asking
-  // once the main app content is about to show (not on the auth screen)
-  // keeps it out of the way of first-run signup/login.
-  useEffect(() => {
-    if (session) requestTrackingPermissionsAsync().catch(() => {});
-  }, [session]);
 
   // Only connects to the store once purchases are actually live — no point
   // opening a StoreKit connection while ShopScreen still shows "coming soon".
