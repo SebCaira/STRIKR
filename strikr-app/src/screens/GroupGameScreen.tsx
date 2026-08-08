@@ -158,6 +158,8 @@ export default function GroupGameScreen({
   const [level, setLevel] = useState<Level>('medium');
   const [listDifficulty, setListDifficulty] = useState<QuizDifficulty>('easy');
   const [busy, setBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const autoInviteFiredRef = useRef(false);
 
   // Arrived via FriendsScreen's "challenge" picker with a friend already
   // chosen: pre-select them (there's only ever one slot in a duel lobby)
@@ -167,6 +169,19 @@ export default function GroupGameScreen({
     setSelectedFriendIds([inviteUserId]);
     onInviteConsumed?.();
   }, [inviteUserId, loading, game, onInviteConsumed]);
+
+  // A 1-on-1 challenge from FriendsScreen shouldn't need a "create the
+  // room" tap like the up-to-4 Groupe flow does — send the invite the
+  // moment we land here, same as DuelScreen/XIDuelScreen already do for
+  // Grille/XI Type challenges.
+  useEffect(() => {
+    if (variant !== 'duel' || !inviteUserId || loading || game || autoInviteFiredRef.current) return;
+    autoInviteFiredRef.current = true;
+    setCreateError(null);
+    createGroup([inviteUserId], [inviteUserName || ''], roundSeconds, gameType).then(({ error }) => {
+      if (error) setCreateError(error);
+    });
+  }, [variant, inviteUserId, inviteUserName, loading, game, roundSeconds, gameType, createGroup]);
 
   // Local per-round play state — only reported back via submitResult() at
   // solve or timeout, so other players never see live guesses, just the
@@ -258,8 +273,10 @@ export default function GroupGameScreen({
   const handleCreate = async () => {
     if (!selectedFriendIds.length || busy) return;
     setBusy(true);
+    setCreateError(null);
     const names = selectedFriendIds.map((id) => friends.find((f) => f.id === id)?.display_name || '');
-    await createGroup(selectedFriendIds, names, roundSeconds, gameType);
+    const { error } = await createGroup(selectedFriendIds, names, roundSeconds, gameType);
+    if (error) setCreateError(error);
     setBusy(false);
   };
 
@@ -440,7 +457,33 @@ export default function GroupGameScreen({
     );
   }
 
-  // No active game: create a lobby.
+  // No active game yet. For a 1-on-1 challenge the invite fires
+  // automatically above — this just covers the brief send, or a failure.
+  if (!game && variant === 'duel' && inviteUserId) {
+    return withBack(
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 20 }}>
+        {createError ? (
+          <>
+            <Text style={{ fontSize: 40 }}>😕</Text>
+            <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.ink, textAlign: 'center' }}>{t('duel_invite_error')}</Text>
+            <Pressable
+              onPress={() => {
+                setCreateError(null);
+                autoInviteFiredRef.current = false;
+              }}
+              style={{ paddingVertical: 12, paddingHorizontal: 20, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}
+            >
+              <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('group_retry')}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <ActivityIndicator color={colors.ink} />
+        )}
+      </View>
+    );
+  }
+
+  // No active game: create a lobby (Groupe, up to 4 friends).
   if (!game) {
     return withBack(
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 60, paddingHorizontal: 20 }}>
@@ -519,27 +562,41 @@ export default function GroupGameScreen({
     );
   }
 
-  // Lobby: waiting room.
+  // Lobby: waiting room (Groupe), or a classic direct-duel wait (Duel — no
+  // room/code, just "waiting for them to answer" like Grille/XI Type).
   if (game.status === 'lobby') {
     const joinedCount = players.filter((p) => p.status === 'joined').length;
     const listsForDifficulty = listPool === 'xi' ? XI_MATCHES : QUIZ_LISTS.filter((l) => l.difficulty === listDifficulty);
+    const opponentRow = variant === 'duel' ? players.find((p) => p.user_id !== user?.id) : null;
     return withBack(
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 60, paddingHorizontal: 20 }}>
         <ScrollView>
-          <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.ink }}>
-            {t('group_lobby_title')} {joinedCount}/{players.length}
-          </Text>
-          <View style={{ marginTop: 16, gap: 8 }}>
-            {players.map((p) => (
-              <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
-                <Text style={{ fontSize: 16 }}>{p.status === 'joined' ? '✓' : p.status === 'declined' ? '✕' : '○'}</Text>
-                <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink, flex: 1 }}>{p.display_name}</Text>
-                <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>
-                  {p.status === 'joined' ? t('group_status_joined') : p.status === 'declined' ? t('group_status_declined') : t('group_status_waiting')}
-                </Text>
+          {variant === 'duel' ? (
+            <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.ink }}>
+              {opponentRow?.status === 'declined'
+                ? t('duel_invite_declined_title').replace('{name}', opponentRow.display_name || '')
+                : opponentRow?.status === 'joined'
+                ? (opponentRow.display_name || '') + ' ' + t('duel_opponent_ready_suffix')
+                : t('duel_invite_waiting_title').replace('{name}', opponentRow?.display_name || '')}
+            </Text>
+          ) : (
+            <>
+              <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.ink }}>
+                {t('group_lobby_title')} {joinedCount}/{players.length}
+              </Text>
+              <View style={{ marginTop: 16, gap: 8 }}>
+                {players.map((p) => (
+                  <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+                    <Text style={{ fontSize: 16 }}>{p.status === 'joined' ? '✓' : p.status === 'declined' ? '✕' : '○'}</Text>
+                    <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink, flex: 1 }}>{p.display_name}</Text>
+                    <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>
+                      {p.status === 'joined' ? t('group_status_joined') : p.status === 'declined' ? t('group_status_declined') : t('group_status_waiting')}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            </>
+          )}
 
           {isCreator && gameType === 'main' && (
             <>
