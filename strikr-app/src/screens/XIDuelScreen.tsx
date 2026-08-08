@@ -2,7 +2,7 @@
 // naming the starting eleven — 45s per name, most correct wins. Turn-based
 // (unlike Mode Liste's duel, which races simultaneously), so this has its
 // own hook (useXIDuel) and screen rather than reusing GroupGameScreen.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,6 +11,7 @@ import { XI_DUEL_TURN_SECONDS, useXIDuel } from '../game/useXIDuel';
 import { useInterstitialAd } from '../game/useInterstitialAd';
 import { XI_MATCHES } from '../data/xiMatches';
 import { playerFull } from '../data/quizLists';
+import { PLAYERS } from '../data/players';
 import { useFriends } from '../state/friends';
 import { stripAcc } from '../game/engine';
 import RulesModal from '../components/RulesModal';
@@ -23,7 +24,17 @@ function norm(s: string): string {
   return stripAcc(s.trim().toLowerCase()).replace(/[^a-z]/g, '');
 }
 
-export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
+interface XIDuelScreenProps {
+  onBack?: () => void;
+  // Set when arriving from FriendsScreen's "challenge" picker: fires the
+  // invite straight to that friend as soon as a match is chosen, instead
+  // of making the challenger pick them again from the list below.
+  inviteUserId?: string;
+  inviteUserName?: string;
+  onInviteConsumed?: () => void;
+}
+
+export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onInviteConsumed }: XIDuelScreenProps) {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -78,6 +89,18 @@ export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
     if (error) setMessage(error);
   };
 
+  // Ref (not state) so this can only ever fire once per mount, regardless
+  // of how many times the effect re-runs while waiting on `duel` to update
+  // from the realtime subscription.
+  const invitedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!inviteUserId || !selectedMatchId || invitedOnceRef.current) return;
+    invitedOnceRef.current = true;
+    sendInvite(inviteUserId, inviteUserName || '');
+    onInviteConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteUserId, selectedMatchId]);
+
   const submitAnswer = async () => {
     if (!answer.trim()) return;
     const { error } = await guessName(answer.trim());
@@ -89,9 +112,20 @@ export default function XIDuelScreen({ onBack }: { onBack?: () => void }) {
     setAnswerError(null);
   };
 
+  // Suggests from the full player database (not just this match's 11) so
+  // the list helps with spelling without doubling as an answer key — a
+  // name showing up here no longer means it's necessarily correct.
+  const foundNamesNorm = new Set(
+    match ? (duel?.found ?? []).map((f) => norm(playerFull(match.players[f.index]))) : []
+  );
+
   const suggestions =
     match && answer.trim().length >= 2
-      ? match.players.filter((p) => norm(playerFull(p)).includes(norm(answer.trim()))).slice(0, 5)
+      ? PLAYERS
+          .map((p) => p.n)
+          .filter((n) => !foundNamesNorm.has(norm(n)))
+          .filter((n) => norm(n).includes(norm(answer.trim())))
+          .slice(0, 5)
       : [];
 
   const withBack = (node: React.ReactElement) => (

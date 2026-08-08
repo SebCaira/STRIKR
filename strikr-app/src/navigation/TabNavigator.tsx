@@ -11,11 +11,11 @@ import { useI18n } from '../i18n/i18n';
 
 export type TabParamList = {
   Home: undefined;
-  // mode/inviteUserId/inviteUserName: set by HomeScreen/MissionsScreen (deep
-  // link straight to the main game) or FriendsScreen's "challenge" button
-  // (deep link straight to sending a duel invite) so JeuxScreen can jump
-  // past its own hub/mode picker.
-  Jeux: { mode?: 'game' | 'duel'; inviteUserId?: string; inviteUserName?: string } | undefined;
+  // mode/game/inviteUserId/inviteUserName: set by HomeScreen/MissionsScreen
+  // (deep link straight to the main game) or FriendsScreen's "challenge"
+  // button (deep link straight to sending a duel invite for the chosen
+  // game) so JeuxScreen can jump past its own hub/mode picker.
+  Jeux: { mode?: 'game' | 'duel'; game?: string; inviteUserId?: string; inviteUserName?: string } | undefined;
   Friends: undefined;
   Profil: undefined;
 };

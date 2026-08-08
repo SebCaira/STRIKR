@@ -47,6 +47,12 @@ interface GroupGameScreenProps {
   // instead of QUIZ_LISTS ("Mode Liste") — no schema change needed since the
   // list content itself is client-side data either way.
   listPool?: 'liste' | 'xi';
+  // Set when arriving from FriendsScreen's "challenge" picker: pre-selects
+  // that friend in the lobby instead of making the challenger pick them
+  // again from the full friends list they were just looking at.
+  inviteUserId?: string;
+  inviteUserName?: string;
+  onInviteConsumed?: () => void;
 }
 
 function Crest({ name, revealFraction }: { name: string; revealFraction: number }) {
@@ -111,7 +117,15 @@ function ClubGuessChips({ row }: { row: ClubGuessRow }) {
   );
 }
 
-export default function GroupGameScreen({ onBack, gameType, variant, listPool = 'liste' }: GroupGameScreenProps) {
+export default function GroupGameScreen({
+  onBack,
+  gameType,
+  variant,
+  listPool = 'liste',
+  inviteUserId,
+  inviteUserName,
+  onInviteConsumed,
+}: GroupGameScreenProps) {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -144,6 +158,15 @@ export default function GroupGameScreen({ onBack, gameType, variant, listPool = 
   const [level, setLevel] = useState<Level>('medium');
   const [listDifficulty, setListDifficulty] = useState<QuizDifficulty>('easy');
   const [busy, setBusy] = useState(false);
+
+  // Arrived via FriendsScreen's "challenge" picker with a friend already
+  // chosen: pre-select them (there's only ever one slot in a duel lobby)
+  // instead of making the challenger find them again in the list below.
+  useEffect(() => {
+    if (!inviteUserId || loading || game) return;
+    setSelectedFriendIds([inviteUserId]);
+    onInviteConsumed?.();
+  }, [inviteUserId, loading, game, onInviteConsumed]);
 
   // Local per-round play state — only reported back via submitResult() at
   // solve or timeout, so other players never see live guesses, just the

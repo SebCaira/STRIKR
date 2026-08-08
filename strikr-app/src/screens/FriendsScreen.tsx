@@ -10,12 +10,25 @@ import { useAuth } from '../state/auth';
 import { supabase } from '../lib/supabase';
 import { avatarColor } from '../lib/avatarColor';
 import AvatarFrame from '../components/AvatarFrame';
+import { XI_MATCHES } from '../data/xiMatches';
 
 const PODIUM_SIZE: Record<number, { size: number; barH: number }> = {
   0: { size: 58, barH: 80 },
   1: { size: 46, barH: 58 },
   2: { size: 42, barH: 42 },
 };
+
+// Every game that supports a 1v1 duel — kept in sync with JeuxScreen's
+// GAMES list (modes.duel === true there). XI Type is hidden the same way
+// JeuxScreen hides it: no point offering a game with no match data yet.
+type ChallengeGameId = 'main' | 'grille' | 'club' | 'liste' | 'xi';
+const CHALLENGE_GAMES: { id: ChallengeGameId; icon: string; labelKey: string }[] = [
+  { id: 'main', icon: '🎯', labelKey: 'jeux_game_main' },
+  { id: 'grille', icon: '🧩', labelKey: 'jeux_game_grille' },
+  { id: 'club', icon: '🏟️', labelKey: 'jeux_game_club' },
+  { id: 'liste', icon: '📝', labelKey: 'jeux_game_liste' },
+  ...(XI_MATCHES.length > 0 ? [{ id: 'xi' as const, icon: '🎽', labelKey: 'jeux_game_xi' }] : []),
+];
 
 export default function FriendsScreen() {
   const { colors, accent, fonts } = useTheme();
@@ -36,12 +49,22 @@ export default function FriendsScreen() {
       .then(({ data }) => setMyCode(data?.referral_code ?? null));
   }, [user]);
 
-  // DuelScreen (nested inside the Jeux tab) owns the single canonical
-  // useDuel() instance — this just hands it a signal to send the invite,
-  // rather than running a second useDuel() here with its own realtime
+  // Tapping the ⚔️ button opens a small game picker (below) instead of
+  // sending straight to the Grille — challengeGame() fires once a game is
+  // chosen. The various duel screens (nested inside the Jeux tab) own their
+  // canonical hook instance each — this just hands them a signal to send
+  // the invite, rather than running a second one here with its own realtime
   // subscription racing the one already live over there.
-  const challengeFriend = (friend: FriendRow) => {
-    navigation.navigate('Jeux', { mode: 'duel', inviteUserId: friend.id, inviteUserName: friend.display_name });
+  const [challengeTarget, setChallengeTarget] = useState<FriendRow | null>(null);
+  const challengeGame = (gameId: ChallengeGameId) => {
+    if (!challengeTarget) return;
+    navigation.navigate('Jeux', {
+      mode: 'duel',
+      game: gameId,
+      inviteUserId: challengeTarget.id,
+      inviteUserName: challengeTarget.display_name,
+    });
+    setChallengeTarget(null);
   };
 
   // Keeps XP/streak current when coming back to this tab after playing —
@@ -204,7 +227,7 @@ export default function FriendsScreen() {
                       </View>
                       <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.ink }}>{r.xp} XP</Text>
                       <Pressable
-                        onPress={() => challengeFriend(r)}
+                        onPress={() => setChallengeTarget(r)}
                         style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: accent.coral, alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Text style={{ fontSize: 13 }}>⚔️</Text>
@@ -262,6 +285,29 @@ export default function FriendsScreen() {
             </View>
 
             {modalMessage && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: colors.muted }}>{modalMessage}</Text>}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={!!challengeTarget} transparent animationType="fade" onRequestClose={() => setChallengeTarget(null)}>
+        <Pressable
+          onPress={() => setChallengeTarget(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+        >
+          <Pressable onPress={() => {}} style={{ backgroundColor: colors.bg, borderWidth: 2.5, borderColor: colors.border, borderRadius: 20, padding: 22, maxWidth: 320, width: '100%', gap: 10 }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink }}>
+              {t('friends_choose_game_title')} — {challengeTarget?.display_name}
+            </Text>
+            {CHALLENGE_GAMES.map((g) => (
+              <Pressable
+                key={g.id}
+                onPress={() => challengeGame(g.id)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}
+              >
+                <Text style={{ fontSize: 18 }}>{g.icon}</Text>
+                <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>{t(g.labelKey)}</Text>
+              </Pressable>
+            ))}
           </Pressable>
         </Pressable>
       </Modal>

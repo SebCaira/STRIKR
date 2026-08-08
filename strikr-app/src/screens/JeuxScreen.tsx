@@ -71,11 +71,12 @@ export default function JeuxScreen() {
       if (route.params.inviteUserId) {
         setInvite({ userId: route.params.inviteUserId, userName: route.params.inviteUserName || '' });
       }
-      setSelectedGame('grille');
+      const requestedGame = route.params.game as GameId | undefined;
+      setSelectedGame(requestedGame && GAMES.some((g) => g.id === requestedGame) ? requestedGame : 'grille');
       setSelectedMode('duel');
-      navigation.setParams({ mode: undefined, inviteUserId: undefined, inviteUserName: undefined });
+      navigation.setParams({ mode: undefined, game: undefined, inviteUserId: undefined, inviteUserName: undefined });
     }
-  }, [route.params?.mode, route.params?.inviteUserId, route.params?.inviteUserName, navigation]);
+  }, [route.params?.mode, route.params?.game, route.params?.inviteUserId, route.params?.inviteUserName, navigation]);
 
   const backToHub = () => {
     setSelectedGame(null);
@@ -91,12 +92,45 @@ export default function JeuxScreen() {
   if (selectedGame && selectedMode) {
     if (selectedGame === 'main' && selectedMode === 'solo') return <GameScreen onBack={backToModes} />;
     if (selectedGame === 'main' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="main" variant="group" />;
-    if (selectedGame === 'main' && selectedMode === 'duel') return <GroupGameScreen onBack={backToModes} gameType="main" variant="duel" />;
+    if (selectedGame === 'main' && selectedMode === 'duel') {
+      return (
+        <GroupGameScreen
+          onBack={backToModes}
+          gameType="main"
+          variant="duel"
+          inviteUserId={invite?.userId}
+          inviteUserName={invite?.userName}
+          onInviteConsumed={() => setInvite(null)}
+        />
+      );
+    }
     if (selectedGame === 'club' && selectedMode === 'solo') return <ClubGuessScreen onBack={backToModes} />;
-    if (selectedGame === 'club' && selectedMode === 'duel') return <GroupGameScreen onBack={backToModes} gameType="club" variant="duel" />;
+    if (selectedGame === 'club' && selectedMode === 'duel') {
+      return (
+        <GroupGameScreen
+          onBack={backToModes}
+          gameType="club"
+          variant="duel"
+          inviteUserId={invite?.userId}
+          inviteUserName={invite?.userName}
+          onInviteConsumed={() => setInvite(null)}
+        />
+      );
+    }
     if (selectedGame === 'club' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="club" variant="group" />;
     if (selectedGame === 'liste' && selectedMode === 'solo') return <QuizListScreen onBack={backToModes} />;
-    if (selectedGame === 'liste' && selectedMode === 'duel') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="duel" />;
+    if (selectedGame === 'liste' && selectedMode === 'duel') {
+      return (
+        <GroupGameScreen
+          onBack={backToModes}
+          gameType="liste"
+          variant="duel"
+          inviteUserId={invite?.userId}
+          inviteUserName={invite?.userName}
+          onInviteConsumed={() => setInvite(null)}
+        />
+      );
+    }
     if (selectedGame === 'liste' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" />;
     if (selectedGame === 'grille' && selectedMode === 'solo') return <SoloGridScreen onExit={backToModes} />;
     if (selectedGame === 'grille' && selectedMode === 'duel') {
@@ -112,7 +146,16 @@ export default function JeuxScreen() {
     if (selectedGame === 'grille' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="grille" variant="group" />;
     if (selectedGame === 'clubsquiz' && selectedMode === 'solo') return <ClubsQuizScreen onBack={backToModes} />;
     if (selectedGame === 'xi' && selectedMode === 'solo') return <QuizListScreen onBack={backToModes} pool="xi" />;
-    if (selectedGame === 'xi' && selectedMode === 'duel') return <XIDuelScreen onBack={backToModes} />;
+    if (selectedGame === 'xi' && selectedMode === 'duel') {
+      return (
+        <XIDuelScreen
+          onBack={backToModes}
+          inviteUserId={invite?.userId}
+          inviteUserName={invite?.userName}
+          onInviteConsumed={() => setInvite(null)}
+        />
+      );
+    }
     if (selectedGame === 'xi' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" listPool="xi" />;
   }
 

@@ -9,6 +9,7 @@ import { useQuizList } from '../game/useQuizList';
 import { useInterstitialAd } from '../game/useInterstitialAd';
 import { QUIZ_LISTS, QuizDifficulty, playerFull, playerPhoto } from '../data/quizLists';
 import { XI_MATCHES } from '../data/xiMatches';
+import { PLAYERS } from '../data/players';
 import { stripAcc } from '../game/engine';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
@@ -17,6 +18,14 @@ import XIPitch from '../components/XIPitch';
 
 function norm(s: string): string {
   return stripAcc(s.trim().toLowerCase());
+}
+
+// Letters only, ignoring spaces/hyphens/apostrophes — needed to match the
+// full player database's real names ("Trent Alexander-Arnold") against
+// answers typed on a letters-only in-app keyboard (see submitGuess in
+// useQuizList.ts, which normalizes the same way).
+function normLetters(s: string): string {
+  return norm(s).replace(/[^a-z]/g, '');
 }
 
 const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
@@ -58,13 +67,29 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
     setError(null);
   };
 
+  // XI Type suggests from the full player database (not just this match's
+  // 11) so the list actually helps with spelling instead of doubling as an
+  // answer key — seeing a name suggested no longer means it's correct.
+  // Mode Liste (squad) keeps suggesting from its own themed roster.
+  const foundNamesNorm = new Set(
+    list && pool === 'xi' ? foundIndexes.map((i) => normLetters(playerFull(list.players[i]))) : []
+  );
+
   const suggestions =
-    list && answer.trim().length >= 2
-      ? list.players
-          .filter((_, i) => !foundIndexes.includes(i))
-          .filter((p) => norm(playerFull(p)).includes(norm(answer.trim())))
-          .slice(0, 5)
-      : [];
+    answer.trim().length < 2
+      ? []
+      : pool === 'xi'
+        ? PLAYERS
+            .map((p) => p.n)
+            .filter((n) => !foundNamesNorm.has(normLetters(n)))
+            .filter((n) => normLetters(n).includes(normLetters(answer)))
+            .slice(0, 5)
+        : list
+          ? list.players
+              .filter((_, i) => !foundIndexes.includes(i))
+              .filter((p) => norm(playerFull(p)).includes(norm(answer.trim())))
+              .slice(0, 5)
+          : [];
 
   const submit = () => {
     if (!answer.trim() || status !== 'playing') return;
