@@ -37,7 +37,10 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
   // refocusing this mode later doesn't refire it.
   useEffect(() => {
     if (!inviteUserId || loading || duel) return;
-    inviteDuel(inviteUserId, inviteUserName || '');
+    setMessage(null);
+    inviteDuel(inviteUserId, inviteUserName || '').then(({ error }) => {
+      if (error) setMessage(error);
+    });
     onInviteConsumed?.();
   }, [inviteUserId, inviteUserName, loading, duel, inviteDuel, onInviteConsumed]);
 

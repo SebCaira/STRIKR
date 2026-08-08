@@ -85,6 +85,13 @@ export default function FriendsScreen() {
   const [codeInput, setCodeInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
+
+  const handleRespondRequest = async (requestId: string, accept: boolean) => {
+    setRequestError(null);
+    const { error } = await respondRequest(requestId, accept);
+    if (error) setRequestError(t('error_generic'));
+  };
 
   const openModal = () => {
     setModalMessage(null);
@@ -136,14 +143,15 @@ export default function FriendsScreen() {
           {requests.map((r) => (
             <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
               <Text style={{ flex: 1, fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }} numberOfLines={1}>{r.display_name}</Text>
-              <Pressable onPress={() => respondRequest(r.id, true)} style={{ paddingVertical: 7, paddingHorizontal: 12, backgroundColor: accent.mint, borderRadius: 999 }}>
+              <Pressable onPress={() => handleRespondRequest(r.id, true)} style={{ paddingVertical: 7, paddingHorizontal: 12, backgroundColor: accent.mint, borderRadius: 999 }}>
                 <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: '#1a1a1a' }}>{t('friends_accept')}</Text>
               </Pressable>
-              <Pressable onPress={() => respondRequest(r.id, false)} style={{ paddingVertical: 7, paddingHorizontal: 12, backgroundColor: colors.track, borderRadius: 999 }}>
+              <Pressable onPress={() => handleRespondRequest(r.id, false)} style={{ paddingVertical: 7, paddingHorizontal: 12, backgroundColor: colors.track, borderRadius: 999 }}>
                 <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: colors.muted }}>{t('friends_decline')}</Text>
               </Pressable>
             </View>
           ))}
+          {requestError && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral }}>{requestError}</Text>}
         </View>
       )}
 

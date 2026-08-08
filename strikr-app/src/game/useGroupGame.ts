@@ -384,7 +384,7 @@ export function useGroupGame() {
   const submitResult = useCallback(
     async (result: { attempts?: number; elapsedMs?: number | null; solved?: boolean; foundCount?: number }): Promise<void> => {
       if (!game || !user) return;
-      await supabase
+      const { error } = await supabase
         .from('group_game_players')
         .update({
           attempts: result.attempts ?? 0,
@@ -394,6 +394,11 @@ export function useGroupGame() {
         })
         .eq('game_id', game.id)
         .eq('user_id', user.id);
+      // Not surfaced to the player — the round is already over locally by
+      // the time this is called, nothing actionable for them to do — but
+      // logged so a dropped result (and the wrong reward it causes for
+      // whoever's reading the row) is at least diagnosable.
+      if (error) console.warn('submitResult failed', error);
     },
     [game, user]
   );
@@ -403,7 +408,8 @@ export function useGroupGame() {
   // later timer firing on another client is a harmless no-op.
   const finishGame = useCallback(async (): Promise<void> => {
     if (!game) return;
-    await supabase.from('group_games').update({ status: 'finished' }).eq('id', game.id).eq('status', 'active');
+    const { error } = await supabase.from('group_games').update({ status: 'finished' }).eq('id', game.id).eq('status', 'active');
+    if (error) console.warn('finishGame failed', error);
   }, [game]);
 
   const leaveFinished = useCallback(() => setGame(null), []);
