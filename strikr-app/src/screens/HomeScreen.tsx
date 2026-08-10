@@ -1,11 +1,12 @@
 import React, { useCallback } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useDiamonds } from '../state/diamonds';
-import { useStats } from '../state/stats';
+import { useStats, dailyRewardDiamonds } from '../state/stats';
+import { useAvatar } from '../state/avatar';
 import { deriveMissions } from '../state/missions';
 import { useFriends } from '../state/friends';
 import { useTotalPlayers } from '../state/appStats';
@@ -17,8 +18,20 @@ export default function HomeScreen() {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const { diamonds } = useDiamonds();
-  const { stats, derived } = useStats();
+  const { stats, derived, canClaimDailyReward, nextDailyRewardDay, claimDailyReward } = useStats();
+  const { grantFrame } = useAvatar();
   const missions = deriveMissions(stats);
+
+  // Fallback claim path — the popup (DailyRewardModal, mounted at the app
+  // root) already fires automatically the first time Home mounts each day,
+  // so this card claiming anything is the rare case of that popup having
+  // been dismissed (e.g. Android back button) before it was claimed.
+  const claimFromCard = () => {
+    const r = claimDailyReward();
+    if (!r) return;
+    if (r.milestone?.frameId) grantFrame(r.milestone.frameId);
+    Alert.alert(t('daily_reward_claimed_title'), `+${r.diamonds} 💎${r.xp > 0 ? ` · +${r.xp} XP` : ''}${r.freeHints > 0 ? ` · +${r.freeHints} 🔎` : ''}`);
+  };
   const { friends, refresh: refreshFriends } = useFriends();
   const totalPlayers = useTotalPlayers();
   const { solvedPlayers } = useSolvedPlayers();
@@ -118,6 +131,23 @@ export default function HomeScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 10, gap: 8 }}>
+          <HardShadowBox bg={canClaimDailyReward ? accent.yellow : colors.card} shadowColor="#1a1a1a" radius={14} offset={3}>
+            <Pressable onPress={canClaimDailyReward ? claimFromCard : undefined} style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ fontSize: 26 }}>{canClaimDailyReward ? '🎁' : '🔥'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, letterSpacing: 1.4 }}>{t('home_daily_reward_kicker')}</Text>
+                {canClaimDailyReward ? (
+                  <Text style={{ fontFamily: fonts.display, fontSize: 15, color: '#1a1a1a', marginTop: 2 }}>{t('daily_reward_claim')}</Text>
+                ) : (
+                  <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.ink, marginTop: 2 }}>
+                    {t('daily_reward_day_prefix')} {stats.dailyRewardStreak} · +{dailyRewardDiamonds(nextDailyRewardDay)}💎 {t('home_daily_reward_tomorrow')}
+                  </Text>
+                )}
+              </View>
+              {canClaimDailyReward && <Text style={{ fontFamily: fonts.display, fontSize: 22, color: '#1a1a1a' }}>→</Text>}
+            </Pressable>
+          </HardShadowBox>
+
           <HardShadowBox bg={accent.blue} shadowColor={accent.yellow} radius={14} offset={3}>
             <Pressable onPress={() => navigation.getParent()?.navigate('Daily')} style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Text style={{ fontSize: 26 }}>🔤</Text>

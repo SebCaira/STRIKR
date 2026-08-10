@@ -26,6 +26,7 @@ import { SettingsProvider } from './src/state/settings';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import LevelUpModal from './src/components/LevelUpModal';
+import DailyRewardModal from './src/components/DailyRewardModal';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 // Kicks off the AdMob SDK init as early as possible, unconditional (not
@@ -68,6 +69,7 @@ function AppShell() {
       <StatusBar style={dark ? 'light' : 'dark'} />
       <RootNavigator />
       <LevelUpModal />
+      <DailyRewardModal />
     </View>
   );
 }

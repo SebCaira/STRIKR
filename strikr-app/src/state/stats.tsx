@@ -40,6 +40,16 @@ export interface StatsData {
   gameWinsToday: number;
   firstTryHardWinToday: boolean;
   fastestSolveMsToday: number | null;
+  // Daily login reward — deliberately separate from currentStreak/
+  // lastPlayedDate above: those only move on an actual game win, this moves
+  // just from opening the app and claiming, so the two streaks can (and
+  // will) diverge. No Streak Freeze protection here — missing a day always
+  // resets to day 1, unlike the win streak.
+  dailyRewardStreak: number;
+  dailyRewardClaimedDate: string | null;
+  // Free-hint credits (from daily reward bonuses/milestones) — spent before
+  // diamonds the next time a hint is bought, see useGameEngine's buyHint.
+  freeHints: number;
 }
 
 const DEFAULT_STATS: StatsData = {
@@ -57,7 +67,43 @@ const DEFAULT_STATS: StatsData = {
   gameWinsToday: 0,
   firstTryHardWinToday: false,
   fastestSolveMsToday: null,
+  dailyRewardStreak: 0,
+  dailyRewardClaimedDate: null,
+  freeHints: 0,
 };
+
+// Diamonds for the Nth consecutive daily-reward day (before any milestone
+// top-up) — climbs by 1/day then caps at 15, matching the table shown to
+// the player: 5,6,7,8,9,10,11,12,13, then 15 from day 10 onward. Exported
+// so the Home card can preview tomorrow's amount with the same formula.
+export function dailyRewardDiamonds(day: number): number {
+  return day >= 10 ? 15 : 4 + day;
+}
+
+export interface DailyRewardMilestone {
+  day: 10 | 30 | 50 | 100;
+  diamonds: number;
+  freeHints: number;
+  xp: number;
+  frameId: string | null;
+  streakFreeze: number;
+}
+
+const DAILY_REWARD_MILESTONES: DailyRewardMilestone[] = [
+  { day: 10, diamonds: 50, freeHints: 1, xp: 0, frameId: null, streakFreeze: 0 },
+  { day: 30, diamonds: 100, freeHints: 2, xp: 50, frameId: null, streakFreeze: 0 },
+  { day: 50, diamonds: 150, freeHints: 3, xp: 0, frameId: 'loyal', streakFreeze: 0 },
+  { day: 100, diamonds: 300, freeHints: 5, xp: 0, frameId: 'legend', streakFreeze: 1 },
+];
+
+export interface DailyRewardResult {
+  streakDay: number;
+  diamonds: number;
+  xp: number;
+  freeHints: number;
+  bonusRoll: 'hint' | 'xp' | null;
+  milestone: DailyRewardMilestone | null;
+}
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -109,6 +155,12 @@ interface StatsContextValue {
   // recordWin, so it can't be mistaken for a second win being recorded.
   addBonusXp: (xp: number) => void;
   buyStreakFreeze: () => { error: string | null };
+  // Daily login reward — see claimDailyReward below for the day-1..N+
+  // amounts and day 10/30/50/100 milestones.
+  canClaimDailyReward: boolean;
+  nextDailyRewardDay: number;
+  claimDailyReward: () => DailyRewardResult | null;
+  spendFreeHint: () => void;
   // Set the moment a recordWin() crosses into a new level; a mounted
   // <LevelUpModal /> shows the celebration and calls clearLevelUpEvent()
   // once dismissed. Diamonds are credited independently of that UI (see the
@@ -273,6 +325,61 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, [diamonds, addDiamonds, user]);
 
+  // What claiming right now would be worth — used to preview the popup/card
+  // before the player actually taps "Récupérer" (which commits it below).
+  const nextDailyRewardDay = stats.dailyRewardClaimedDate === yesterdayStr() ? stats.dailyRewardStreak + 1 : 1;
+  const canClaimDailyReward = stats.dailyRewardClaimedDate !== todayStr();
+
+  const claimDailyReward = useCallback((): DailyRewardResult | null => {
+    if (stats.dailyRewardClaimedDate === todayStr()) return null;
+    const day = nextDailyRewardDay;
+    const milestone = DAILY_REWARD_MILESTONES.find((m) => m.day === day) || null;
+    const roll = Math.random() * 100;
+    const bonusRoll: 'hint' | 'xp' | null = roll < 15 ? 'hint' : roll < 30 ? 'xp' : null;
+    const result: DailyRewardResult = {
+      streakDay: day,
+      diamonds: dailyRewardDiamonds(day) + (milestone?.diamonds ?? 0),
+      xp: (bonusRoll === 'xp' ? 10 : 0) + (milestone?.xp ?? 0),
+      freeHints: (bonusRoll === 'hint' ? 1 : 0) + (milestone?.freeHints ?? 0),
+      bonusRoll,
+      milestone,
+    };
+    addDiamonds(result.diamonds);
+    setStats((prev) => {
+      const today = todayStr();
+      const xpToday = prev.xpTodayDate === today ? prev.xpToday + result.xp : result.xp;
+      const next: StatsData = {
+        ...prev,
+        dailyRewardStreak: day,
+        dailyRewardClaimedDate: today,
+        freeHints: prev.freeHints + result.freeHints,
+        xp: prev.xp + result.xp,
+        xpTodayDate: result.xp > 0 ? today : prev.xpTodayDate,
+        xpToday: result.xp > 0 ? xpToday : prev.xpToday,
+        streakFreezes: prev.streakFreezes + (milestone?.streakFreeze ?? 0),
+      };
+      const prevLevel = levelForXp(prev.xp).level;
+      const nextLevel = levelForXp(next.xp).level;
+      if (nextLevel > prevLevel) setLevelUpEvent(nextLevel);
+      if (user) {
+        supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
+      }
+      return next;
+    });
+    return result;
+  }, [stats.dailyRewardClaimedDate, nextDailyRewardDay, addDiamonds, user]);
+
+  const spendFreeHint = useCallback(() => {
+    setStats((prev) => {
+      if (prev.freeHints <= 0) return prev;
+      const next = { ...prev, freeHints: prev.freeHints - 1 };
+      if (user) {
+        supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
+      }
+      return next;
+    });
+  }, [user]);
+
   const firstTryPercent = stats.totalWins > 0 ? Math.round((stats.firstTryWins / stats.totalWins) * 100) : 0;
   const { level, progress, xpIntoLevel, xpForNext } = levelForXp(stats.xp);
 
@@ -284,6 +391,10 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         recordWin,
         addBonusXp,
         buyStreakFreeze,
+        canClaimDailyReward,
+        nextDailyRewardDay,
+        claimDailyReward,
+        spendFreeHint,
         levelUpEvent,
         clearLevelUpEvent,
         ready,

@@ -37,6 +37,7 @@ type PendingEffect =
   | { kind: 'wrong' }
   | { kind: 'lost'; playerName: string }
   | { kind: 'hint'; cost: number }
+  | { kind: 'hint_free' }
   | null;
 
 export interface GameState {
@@ -66,7 +67,7 @@ const nameToIndex = new Map(PLAYERS.map((p, i) => [p.n, i]));
 
 export function useGameEngine() {
   const { diamonds, addDiamonds } = useDiamonds();
-  const { stats, recordWin, addBonusXp } = useStats();
+  const { stats, recordWin, addBonusXp, spendFreeHint } = useStats();
   const { user } = useAuth();
   const { solvedPlayers, markSolved } = useSolvedPlayers();
   // Single shuffled draw pool for the whole roster (not per-level anymore).
@@ -130,9 +131,12 @@ export function useGameEngine() {
     } else if (pe.kind === 'hint') {
       addDiamonds(-pe.cost);
       fx.coin();
+    } else if (pe.kind === 'hint_free') {
+      spendFreeHint();
+      fx.coin();
     }
     setState((prev) => (prev.pendingEffect === pe ? { ...prev, pendingEffect: null } : prev));
-  }, [state.pendingEffect, addDiamonds, recordWin, markSolved, user]);
+  }, [state.pendingEffect, addDiamonds, recordWin, markSolved, user, spendFreeHint]);
 
   const pickPlayer = useCallback(() => {
     let pool = remainingPool.current;
@@ -247,6 +251,11 @@ export function useGameEngine() {
     (kind: keyof Hints) => {
       setState((prev) => {
         if (!prev.player || prev.status === 'won' || prev.hints[kind]) return prev;
+        // Free-hint credits (from the daily login reward) spend before
+        // diamonds — no cost check needed since there's nothing to charge.
+        if (stats.freeHints > 0) {
+          return { ...prev, hints: { ...prev.hints, [kind]: true }, pendingEffect: { kind: 'hint_free' } };
+        }
         const cost = HINT_COSTS[kind];
         if (diamonds < cost) {
           flashLowDiamonds();
@@ -255,7 +264,7 @@ export function useGameEngine() {
         return { ...prev, hints: { ...prev.hints, [kind]: true }, pendingEffect: { kind: 'hint', cost } };
       });
     },
-    [diamonds, flashLowDiamonds]
+    [diamonds, flashLowDiamonds, stats.freeHints]
   );
 
   // Checked against `state` before calling setState — not via a flag

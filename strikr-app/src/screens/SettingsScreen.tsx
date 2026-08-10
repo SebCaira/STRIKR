@@ -249,6 +249,10 @@ export default function SettingsScreen() {
                         equipFrame(f.id);
                         return;
                       }
+                      if (f.milestoneOnly) {
+                        setFrameMessage(t('settings_frames_milestone_locked'));
+                        return;
+                      }
                       if (f.unlockLevel !== undefined) {
                         setFrameMessage(t('settings_frames_level_locked_prefix') + ' ' + f.unlockLevel);
                         return;
@@ -264,7 +268,13 @@ export default function SettingsScreen() {
                       </View>
                     </AvatarFrame>
                     <Text style={{ fontFamily: fonts.mono, fontSize: 8, color: colors.muted }}>
-                      {available ? t(f.labelKey) : f.unlockLevel !== undefined ? `LVL ${f.unlockLevel}` : `💎${f.cost}`}
+                      {available
+                        ? t(f.labelKey)
+                        : f.milestoneOnly
+                        ? '🔒'
+                        : f.unlockLevel !== undefined
+                        ? `LVL ${f.unlockLevel}`
+                        : `💎${f.cost}`}
                     </Text>
                   </Pressable>
                 );

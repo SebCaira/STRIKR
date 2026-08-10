@@ -16,6 +16,9 @@ interface AvatarContextValue {
   ownedFrames: string[];
   equippedFrame: string | null;
   buyFrame: (id: string) => { error: string | null };
+  // Free unlock (daily-reward milestones) — bypasses the cost/level checks
+  // buyFrame enforces, since milestoneOnly frames have neither.
+  grantFrame: (id: string) => void;
   equipFrame: (id: string | null) => void;
   ready: boolean;
 }
@@ -67,6 +70,7 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
       if (ownedFrames.includes(id)) return { error: 'already_owned' };
       const frame = AVATAR_FRAMES.find((f) => f.id === id);
       if (!frame) return { error: 'unknown_frame' };
+      if (frame.milestoneOnly || frame.cost === undefined) return { error: 'not_for_sale' };
       if (diamonds < frame.cost) return { error: 'not_enough_diamonds' };
       addDiamonds(-frame.cost);
       const next = [...ownedFrames, id];
@@ -80,6 +84,20 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
     [ownedFrames, diamonds, addDiamonds, user]
   );
 
+  const grantFrame = useCallback(
+    (id: string) => {
+      setOwnedFrames((prev) => {
+        if (prev.includes(id)) return prev;
+        const next = [...prev, id];
+        if (user) {
+          supabase.from('profiles').update({ owned_frames: next }).eq('id', user.id).then(() => {});
+        }
+        return next;
+      });
+    },
+    [user]
+  );
+
   const equipFrame = useCallback(
     (id: string | null) => {
       setEquippedFrame(id);
@@ -91,7 +109,7 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <AvatarContext.Provider value={{ avatarUrl, setAvatarUrl, ownedFrames, equippedFrame, buyFrame, equipFrame, ready }}>
+    <AvatarContext.Provider value={{ avatarUrl, setAvatarUrl, ownedFrames, equippedFrame, buyFrame, grantFrame, equipFrame, ready }}>
       {children}
     </AvatarContext.Provider>
   );

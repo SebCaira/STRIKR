@@ -10,6 +10,11 @@ export interface AvatarFrameDef {
   id: string;
   cost?: number;
   unlockLevel?: number;
+  // Neither bought nor level-gated — granted only by reaching a daily-login
+  // reward milestone (see stats.tsx's DAILY_REWARD_MILESTONES). Purely a
+  // display flag for the shop UI, which should list these as "earned" and
+  // never offer them for sale.
+  milestoneOnly?: boolean;
   kind: FrameKind;
   colors: [string, string] | [string]; // gradient stops, or a single ring color
   labelKey: string;
@@ -24,6 +29,8 @@ export const AVATAR_FRAMES: AvatarFrameDef[] = [
   { id: 'ocean', unlockLevel: 10, kind: 'gradient', colors: ['#2b3ff2', '#a8f5c6'], labelKey: 'frame_ocean' },
   { id: 'sunset', unlockLevel: 15, kind: 'gradient', colors: ['#ff5a3c', '#ffcae0'], labelKey: 'frame_sunset' },
   { id: 'cosmic', unlockLevel: 20, kind: 'gradient', colors: ['#2b3ff2', '#ffcae0'], labelKey: 'frame_cosmic' },
+  { id: 'loyal', milestoneOnly: true, kind: 'ring', colors: ['#f6e2a8'], labelKey: 'frame_loyal' },
+  { id: 'legend', milestoneOnly: true, kind: 'gradient', colors: ['#ffcc4d', '#ff5a3c'], labelKey: 'frame_legend' },
 ];
 
 export function frameById(id: string | null | undefined): AvatarFrameDef | null {
