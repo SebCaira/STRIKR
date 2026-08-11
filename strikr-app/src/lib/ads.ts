@@ -1,7 +1,7 @@
 // Ad adapter — the only place that should know how ads are actually shown.
 // Everything else (ShopScreen, useInterstitialAd) calls these two functions
 // and doesn't care about the AdMob SDK details.
-import mobileAds, { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import mobileAds, { AdEventType, AdsConsent, AdsConsentStatus, InterstitialAd, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
 
 // Diagnostic conclusion (see shop.ts's ADS_LIVE): swapping to Google's own
 // test ad units made no difference — the crash reproduced identically —
@@ -34,12 +34,16 @@ import mobileAds, { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType
 // this app's code can't reach or catch (matches newArchEnabled:false
 // already not helping either, from the very first diagnostic pass).
 //
-// Every angle reachable from our own code is now exhausted. This needs
-// either an upstream React Native fix (beyond patches/react-native+
-// 0.81.5.patch, which only fixed the secondary memory-corruption issue)
-// or a fix on Google's own SDK side. Don't re-test more library version
-// combinations without new information — check for a real upstream fix
-// instead.
+// Root cause, step 4 (new lead, untested): the app never implemented the
+// User Messaging Platform (UMP) consent flow Google requires for EEA
+// users before requesting ads — our tester is in France, squarely EEA.
+// Google's own SDK is known to behave unpredictably (including crash
+// reports for consent-related bugs on iOS, e.g.
+// googleads-mobile-unity#2617) when an ad is requested without consent
+// having been gathered first. This is unrelated to the TurboModule
+// theory entirely, and — unlike the RN patch and the library downgrade —
+// hasn't been tried yet. Consent gathering is now wired into
+// ensureAdsInitialized() below, before mobileAds().initialize().
 const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
@@ -75,7 +79,26 @@ const LOAD_TIMEOUT = 15000;
 // lazily, only after this promise actually resolves.
 let initPromise: Promise<unknown> | null = null;
 export function ensureAdsInitialized() {
-  if (!initPromise) initPromise = mobileAds().initialize();
+  if (!initPromise) {
+    initPromise = (async () => {
+      // Gather EEA consent before initializing the SDK, per Google's
+      // documented flow — never implemented before now. If this fails for
+      // any reason, still initialize rather than leave ads permanently
+      // broken; worst case the SDK falls back to non-personalized ads.
+      try {
+        const consentInfo = await AdsConsent.requestInfoUpdate();
+        if (
+          consentInfo.isConsentFormAvailable &&
+          (consentInfo.status === AdsConsentStatus.REQUIRED || consentInfo.status === AdsConsentStatus.UNKNOWN)
+        ) {
+          await AdsConsent.showForm();
+        }
+      } catch (e) {
+        console.warn('AdsConsent gathering failed', e);
+      }
+      await mobileAds().initialize();
+    })();
+  }
   return initPromise;
 }
 
