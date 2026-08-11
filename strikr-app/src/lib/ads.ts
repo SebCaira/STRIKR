@@ -21,16 +21,25 @@ import mobileAds, { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType
 // log (SIGABRT, "objc_exception_rethrow" -> uncaught -> terminate) showed
 // the patch working exactly as designed (no more memory corruption), but
 // nothing catches the re-thrown exception either, so the app still aborts.
-// The exception itself is thrown inside react-native-google-mobile-ads'
-// iOS bridge for Full Screen Ads (rewarded/interstitial) events — and
-// their own README's New Architecture status table lists iOS
-// "EventEmitter (Turbo Native Module)" as "To-Do" (not yet migrated),
-// which is exactly the crash-prone async/TurboModule code path. Full
-// Screen Ads only moved onto that path in v14.5.0 (2024-12-03) — so
-// package.json now pins react-native-google-mobile-ads to 14.4.3 (the
-// last version before that migration), which should route
-// rewarded/interstitial calls through the older, unaffected bridge
-// instead. NOT YET VERIFIED ON A REAL DEVICE BUILD.
+//
+// Root cause, step 3 (dead end): theorized the exception came from
+// react-native-google-mobile-ads' iOS EventEmitter bridge specifically,
+// since their README's New Architecture status table lists iOS
+// "EventEmitter (Turbo Native Module)" as "To-Do", and Full Screen Ads
+// only moved onto that path in v14.5.0 (2024-12-03). Pinned the library
+// to 14.4.3 (the last version before that migration) to test it — build
+// 41's crash log was byte-for-byte the same crash signature. Ruled out:
+// the library version doesn't matter, so the exception isn't coming from
+// that specific migration. Whatever throws it, it's happening at a layer
+// this app's code can't reach or catch (matches newArchEnabled:false
+// already not helping either, from the very first diagnostic pass).
+//
+// Every angle reachable from our own code is now exhausted. This needs
+// either an upstream React Native fix (beyond patches/react-native+
+// 0.81.5.patch, which only fixed the secondary memory-corruption issue)
+// or a fix on Google's own SDK side. Don't re-test more library version
+// combinations without new information — check for a real upstream fix
+// instead.
 const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {

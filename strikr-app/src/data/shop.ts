@@ -2,18 +2,20 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md). TEMPORARILY BACK ON to test a new
-// theory: build 40's crash log showed the exception happening in the
-// library's iOS event-emitting bridge for Full Screen Ads, which
-// react-native-google-mobile-ads only moved onto the (crash-prone, per
-// facebook/react-native#54859) New Architecture TurboModule path in
-// v14.5.0 (see package.json — pinned to 14.4.3, the last version before
-// that migration, so rewarded/interstitial ads use the older, unaffected
-// bridge instead). See src/lib/ads.ts for the full chain of reasoning.
-// If a real ad still crashes on a fresh build, set this back to false and
-// report back — don't ship a production/App Store build with this on
-// until it's survived a real on-device test.
-export const ADS_LIVE = true;
+// AdMob is wired in (see ACTIVATION.md), but OFF: a real ad crashes the
+// app on iOS 26 release builds no matter what we've tried on our side —
+// the RN TurboModule fix (patches/react-native+0.81.5.patch, still
+// applied, still worth keeping), and pinning react-native-google-mobile-
+// ads to a pre-TurboModule version (build 41, still crashed identically —
+// see src/lib/ads.ts). Every angle within our own code is now ruled out;
+// what's left is either an upstream React Native fix or a Google SDK fix,
+// neither in our hands. Every ADS_LIVE check below routes to the
+// pre-monetization "instant success" fallback (ShopScreen,
+// useInterstitialAd, useGameEngine's doubleReward) so players still get
+// their reward, just without an actual ad. Revisit only after checking
+// whether react-native-google-mobile-ads or React Native itself has
+// shipped a real fix — don't keep re-testing variations of our own code.
+export const ADS_LIVE = false;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
