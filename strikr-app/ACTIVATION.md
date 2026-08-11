@@ -34,3 +34,9 @@ Checklist pour le jour où tu as un compte développeur Apple/Google et un compt
 Une fois les deux ci-dessus branchés, retire les bannières "mode test" :
 - `shop_test_mode_banner` / `shop_test_mode_note` dans `src/i18n/dict.ts` (les 3 langues)
 - La section "Publicité et achats" de `privacy-policy.md` (mentionne aujourd'hui que tout est simulé)
+
+## 4. Statut réel (mis à jour août 2026)
+
+Les deux SDK sont en fait déjà branchés depuis un moment (voir `src/data/shop.ts`) :
+- **Paiements réels** : actifs (`MONETIZATION_LIVE = true`).
+- **Pubs réelles** : désactivées (`ADS_LIVE = false`) — une vraie pub fait planter l'app, confirmé par plusieurs crash reports sur appareil réel. Cause identifiée : un bug d'React Native lui-même sur iOS 26 en build release (voir le commentaire détaillé dans `src/lib/ads.ts`, et `facebook/react-native#54859`/`#53960`), pas un problème AdMob. Un correctif est préparé dans `patches/react-native+0.81.5.patch` (via `patch-package`, déjà branché dans `package.json`) mais **n'a pas encore été testé sur un vrai build** — ne pas repasser `ADS_LIVE` à `true` avant d'avoir confirmé sur un appareil réel qu'une pub s'affiche sans planter.
