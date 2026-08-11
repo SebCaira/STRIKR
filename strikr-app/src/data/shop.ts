@@ -2,17 +2,18 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md), but temporarily OFF: showing a real
-// ad reliably crashes the app (confirmed via real on-device crash reports —
-// ruled out New Architecture, our AdMob account/ad units, and ad-object
-// init timing as causes; looks like an unresolved bug in the ad library
-// itself on this React Native version). Until that's fixed, every ADS_LIVE
-// check below routes to the pre-monetization "instant success" fallback
-// (ShopScreen, useInterstitialAd, useGameEngine's doubleReward) so players
-// still get their reward, just without an actual ad — keeps the app stable
-// for real testers. Flip back to true once the underlying library bug is
-// resolved.
-export const ADS_LIVE = false;
+// AdMob is wired in (see ACTIVATION.md). Was OFF for a while: showing a
+// real ad reliably crashed the app on iOS 26 release builds — root cause
+// found (see src/lib/ads.ts) and a candidate fix applied via
+// patches/react-native+0.81.5.patch. TEMPORARILY BACK ON to verify that
+// fix on a real device with a `preview` build. If a real ad still crashes
+// the app, set this back to false immediately and report back — don't
+// ship a production/App Store build with this on until it's survived a
+// real on-device test. When off, every ADS_LIVE check below routes to the
+// pre-monetization "instant success" fallback (ShopScreen,
+// useInterstitialAd, useGameEngine's doubleReward) so players still get
+// their reward, just without an actual ad.
+export const ADS_LIVE = true;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
