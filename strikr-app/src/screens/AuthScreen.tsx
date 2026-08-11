@@ -19,6 +19,7 @@ export default function AuthScreen() {
   const [mode, setMode] = useState<Mode>('signin');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -124,7 +125,18 @@ export default function AuthScreen() {
 
     const result = mode === 'signin' ? await signIn(email, password) : await signUp(email, password, cleanUsername);
     setBusy(false);
-    if (result.error) setError(friendlyError({ message: result.error }, t('error_generic')));
+    if (result.error) {
+      setError(friendlyError({ message: result.error }, t('error_generic')));
+      return;
+    }
+    // Fire-and-forget: this screen unmounts the moment signUp() establishes
+    // a session (App.tsx swaps to the main app), so there's no time left to
+    // show a redeemed/invalid message here either way — a bad or already-
+    // used code just quietly doesn't grant anything, same as leaving the
+    // field blank. Redeeming again later from Settings still works.
+    if (mode === 'signup' && referralCode.trim()) {
+      supabase.rpc('redeem_referral_code', { code_arg: referralCode.trim() }).then(() => {});
+    }
   };
 
   return (
@@ -172,6 +184,22 @@ export default function AuthScreen() {
                 paddingVertical: 12, paddingHorizontal: 14,
               }}
             />
+
+            {mode === 'signup' && (
+              <TextInput
+                value={referralCode}
+                onChangeText={setReferralCode}
+                placeholder={t('auth_referral_placeholder')}
+                placeholderTextColor={colors.muted}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={{
+                  fontFamily: fonts.bodySemibold, fontSize: 14, color: colors.ink,
+                  backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12,
+                  paddingVertical: 12, paddingHorizontal: 14,
+                }}
+              />
+            )}
 
             {error && (
               <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 12, color: accent.wrongRed, textAlign: 'center' }}>{error}</Text>
