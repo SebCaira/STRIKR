@@ -8,18 +8,29 @@ import mobileAds, { AdEventType, InterstitialAd, RewardedAd, RewardedAdEventType
 // which rules out our AdMob account/ad units as the cause. Back to the
 // real ones now that ADS_LIVE is off and neither path is actually called.
 //
-// Root cause found (Aug 2026): this is an upstream React Native bug on iOS
-// 26 release builds, unrelated to AdMob specifically — see
+// Root cause, step 1 (Aug 2026): this is an upstream React Native bug on
+// iOS 26 release builds, unrelated to AdMob specifically — see
 // facebook/react-native#54859 and #53960. An async "void" TurboModule
 // method that throws an NSException gets funneled through
 // convertNSExceptionToJSError() from a background native queue, which
-// touches jsi::Runtime off the JS thread and crashes. AdMob's native SDK
-// hits this path when showing a real ad. A 3-line fix exists upstream
-// (not yet in a released React Native/Expo version) — applied here via
-// patches/react-native+0.81.5.patch (patch-package). NOT YET VERIFIED ON
-// A REAL DEVICE BUILD — do not flip ADS_LIVE back to true until a real
-// EAS build with this patch has actually shown a rewarded/interstitial ad
-// without crashing.
+// touches jsi::Runtime off the JS thread and crashes. A 3-line fix exists
+// upstream (not yet in a released React Native/Expo version) — applied
+// here via patches/react-native+0.81.5.patch (patch-package).
+//
+// Root cause, step 2: that fix alone wasn't enough — build 40's real crash
+// log (SIGABRT, "objc_exception_rethrow" -> uncaught -> terminate) showed
+// the patch working exactly as designed (no more memory corruption), but
+// nothing catches the re-thrown exception either, so the app still aborts.
+// The exception itself is thrown inside react-native-google-mobile-ads'
+// iOS bridge for Full Screen Ads (rewarded/interstitial) events — and
+// their own README's New Architecture status table lists iOS
+// "EventEmitter (Turbo Native Module)" as "To-Do" (not yet migrated),
+// which is exactly the crash-prone async/TurboModule code path. Full
+// Screen Ads only moved onto that path in v14.5.0 (2024-12-03) — so
+// package.json now pins react-native-google-mobile-ads to 14.4.3 (the
+// last version before that migration), which should route
+// rewarded/interstitial calls through the older, unaffected bridge
+// instead. NOT YET VERIFIED ON A REAL DEVICE BUILD.
 const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
