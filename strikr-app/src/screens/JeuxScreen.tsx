@@ -171,29 +171,27 @@ export default function JeuxScreen() {
           {game.icon} {t(game.labelKey)}
         </Text>
         <View style={{ marginTop: 20, gap: 10 }}>
-          {(Object.keys(MODE_META) as ModeId[]).map((modeId) => {
-            const enabled = game.modes[modeId];
-            const meta = MODE_META[modeId];
-            return (
-              <Pressable
-                key={modeId}
-                disabled={!enabled}
-                onPress={() => setSelectedMode(modeId)}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
-                  backgroundColor: enabled ? colors.card : colors.track,
-                  borderWidth: 2, borderColor: colors.border, borderRadius: 14,
-                  opacity: enabled ? 1 : 0.5,
-                }}
-              >
-                <Text style={{ fontSize: 22 }}>{meta.icon}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.ink }}>{t(meta.labelKey)}</Text>
-                  {!enabled && <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, marginTop: 2 }}>{t('jeux_mode_soon')}</Text>}
-                </View>
-              </Pressable>
-            );
-          })}
+          {(Object.keys(MODE_META) as ModeId[])
+            .filter((modeId) => game.modes[modeId])
+            .map((modeId) => {
+              const meta = MODE_META[modeId];
+              return (
+                <Pressable
+                  key={modeId}
+                  onPress={() => setSelectedMode(modeId)}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16,
+                    backgroundColor: colors.card,
+                    borderWidth: 2, borderColor: colors.border, borderRadius: 14,
+                  }}
+                >
+                  <Text style={{ fontSize: 22 }}>{meta.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.ink }}>{t(meta.labelKey)}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
         </View>
       </View>
     );
