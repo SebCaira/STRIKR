@@ -2,17 +2,18 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md). TEMPORARILY BACK ON to test a
-// genuinely new lead: the app never implemented Google's required EEA
-// consent flow (UMP) before requesting ads, and our tester is in France
-// — see src/lib/ads.ts for the reasoning and the fix (now wired into
-// ensureAdsInitialized()). Unlike the previous two attempts (RN patch,
-// library downgrade — both ruled out, crash reproduced identically
-// either way), this is a different mechanism entirely, not yet tested.
-// If a real ad still crashes on a fresh build, set this back to false
-// and report back — don't ship a production/App Store build with this
-// on until it's survived a real on-device test.
-export const ADS_LIVE = true;
+// AdMob is wired in (see ACTIVATION.md), but OFF. Three independent fixes
+// tried on real devices — the RN TurboModule patch, downgrading
+// react-native-google-mobile-ads to a pre-TurboModule version, and adding
+// the missing UMP/GDPR consent flow (kept, it's a real requirement
+// regardless) — all produced the exact same crash (build 40/41/42, byte-
+// for-byte identical stack traces). See src/lib/ads.ts for the full
+// history. Conclusion: this needs a different ad SDK entirely, not
+// another variation of react-native-google-mobile-ads. Every ADS_LIVE
+// check below routes to the pre-monetization "instant success" fallback
+// (ShopScreen, useInterstitialAd, useGameEngine's doubleReward) so
+// players still get their reward, just without an actual ad.
+export const ADS_LIVE = false;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
