@@ -10,6 +10,15 @@ const photoCache = new Map<string, string | null>();
 // — only the very first appearance should feel like a reveal.
 const fadedIn = new Set<string>();
 
+// Natural dimensions per photo URL, used to anchor the crop toward the top
+// instead of resizeMode="cover"'s default centered crop. Wikidata player
+// photos are rarely tight headshots — most are standing/action shots with
+// the face in the upper portion and legs/background filling the rest, so a
+// centered crop on a square/circular frame regularly cut off the top of
+// the head while keeping empty jersey/background at the bottom. Anchoring
+// to the top keeps the face in frame; the bottom is what gets cropped.
+const dimsCache = new Map<string, { w: number; h: number }>();
+
 // Frame color reflects card rarity when known (win overlay, collection —
 // both already compute it for their own badges); omit it for contexts with
 // no card to show off (e.g. the "you lost, here's who it was" screen).
@@ -32,6 +41,7 @@ export default function PlayerPortrait({
 }) {
   const { colors, accent, fonts } = useTheme();
   const [url, setUrl] = useState<string | null>(photoCache.get(name) ?? null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(url ? dimsCache.get(url) ?? null : null);
   const opacity = useRef(new Animated.Value(fadedIn.has(name) ? 1 : 0)).current;
 
   useEffect(() => {
@@ -48,6 +58,34 @@ export default function PlayerPortrait({
       cancelled = true;
     };
   }, [name]);
+
+  useEffect(() => {
+    if (!url) {
+      setDims(null);
+      return;
+    }
+    const cached = dimsCache.get(url);
+    if (cached) {
+      setDims(cached);
+      return;
+    }
+    let cancelled = false;
+    Image.getSize(
+      url,
+      (w, h) => {
+        if (cancelled) return;
+        dimsCache.set(url, { w, h });
+        setDims({ w, h });
+      },
+      () => {
+        // Couldn't read natural size (network hiccup) — fall back to a
+        // plain centered cover rather than blocking the image entirely.
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
 
   const onImageLoad = () => {
     if (fadedIn.has(name)) return;
@@ -77,17 +115,28 @@ export default function PlayerPortrait({
           shadowColor: colors.border, shadowOffset: { width: 6, height: 6 }, shadowOpacity: 1, shadowRadius: 0, elevation: 6,
         };
 
+  // Once natural dimensions are known, scale to cover the frame and anchor
+  // the crop to the top (centered horizontally) instead of the centered
+  // crop resizeMode="cover" would otherwise apply on its own.
+  let imageStyle: any = { position: 'absolute', width: '100%', height: '100%', top: 0, left: 0, opacity };
+  if (dims && dims.w > 0 && dims.h > 0) {
+    const scale = Math.max(size / dims.w, size / dims.h);
+    const scaledWidth = dims.w * scale;
+    const scaledHeight = dims.h * scale;
+    imageStyle = {
+      position: 'absolute',
+      width: scaledWidth,
+      height: scaledHeight,
+      top: 0,
+      left: -(scaledWidth - size) / 2,
+      opacity,
+    };
+  }
+
   return (
     <View style={style}>
       {!url && <Text style={{ fontFamily: fonts.display, fontSize: size * 0.28, color: '#ffe66b' }}>{init}</Text>}
-      {url && (
-        <Animated.Image
-          source={{ uri: url }}
-          onLoad={onImageLoad}
-          style={{ position: 'absolute', width: '100%', height: '100%', opacity }}
-          resizeMode="cover"
-        />
-      )}
+      {url && <Animated.Image source={{ uri: url }} onLoad={onImageLoad} style={imageStyle} resizeMode="cover" />}
     </View>
   );
 }
