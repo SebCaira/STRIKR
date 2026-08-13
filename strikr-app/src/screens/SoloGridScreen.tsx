@@ -99,6 +99,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
           {state.grid.cols.map((c, i) => (
             <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6, gap: 3 }}>
               {c.type === 'nat' && <Text style={{ fontSize: 28 }}>{flagEmoji(c.value)}</Text>}
+              {c.type === 'club' && <ClubShield name={c.value} size={34} />}
               <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }}>{c.label}</Text>
             </View>
           ))}
