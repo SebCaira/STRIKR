@@ -2,24 +2,27 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md). Four fixes aimed at the wrong
-// layer (build 40/41/42/45, byte-for-byte identical crash each time) —
-// see src/lib/ads.ts for that full history. Expo support's reply finally
-// explained why: newArchEnabled is false, so the New Architecture
-// TurboModule bug those fixes targeted was never actually in play, and
-// com.facebook.react.ExceptionsManagerQueue is React Native's *legacy*
-// bridge — the crash is an ordinary uncaught JS exception (most likely
-// showRewardedAd() reusing a stale, still-in-flight ad instance between
-// its two independent callers and calling show() on it twice) getting
-// rethrown as a native RCTFatalException in a release build. Fixed in
-// ads.ts (in-flight guard + try/catch around show()); ADS_LIVE flipped
-// back on here specifically to test that fix — no new native build
-// needed, AdMob is already compiled in. If this crashes again, flip it
-// back to false immediately; if it doesn't, ads actually work now. Every
-// ADS_LIVE check below routes to the pre-monetization "instant success"
-// fallback (ShopScreen, useInterstitialAd, useGameEngine's doubleReward)
-// when off, so players still get their reward either way.
-export const ADS_LIVE = true;
+// AdMob is wired in (see ACTIVATION.md), but OFF — for good reason now.
+// Six fixes tried (build 40/41/42/45, byte-for-byte identical crash every
+// time), see src/lib/ads.ts for the full history. Expo support correctly
+// ruled out the New Architecture theory (newArchEnabled is false, so that
+// code path was never running) and pointed at an ordinary uncaught JS
+// exception going through the legacy bridge's ExceptionsManager. Acting
+// on that, every single JS call in the ad-loading chain — SDK init, ad
+// creation, load, show, and all 3 call sites — was wrapped in try/catch
+// so the promise these functions return is structurally guaranteed to
+// never reject. Still crashed, byte-for-byte identical signature. With
+// every JS-reachable call guarded and the crash persisting regardless,
+// the exception can't be coming from this app's JS at all — it has to be
+// thrown natively, inside react-native-google-mobile-ads' own iOS code
+// or the AdMob SDK itself, at a point no JS try/catch can reach. That's
+// no longer something fixable from here; it needs either a fix from the
+// library maintainers or a different ad SDK (AppLovin MAX, blocked until
+// the app is live on the App Store). Every ADS_LIVE check below routes
+// to the pre-monetization "instant success" fallback (ShopScreen,
+// useInterstitialAd, useGameEngine's doubleReward) so players still get
+// their reward, just without an actual ad.
+export const ADS_LIVE = false;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
