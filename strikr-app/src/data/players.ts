@@ -8,7 +8,7 @@ export interface Player {
   clubs: string[];
 }
 
-// STRIKR · Players database (653 entries) — facts pulled from public knowledge.
+// STRIKR · Players database (658 entries) — facts pulled from public knowledge.
 export const PLAYERS: Player[] = [
   // ═══════ Modern superstars ═══════
   { n:"Erling Haaland",       nat:"NO", dob:2000, pos:"AT", clubs:["Bryne FK","Molde FK","RB Salzburg","Borussia Dortmund","Manchester City"] },
@@ -732,6 +732,13 @@ export const PLAYERS: Player[] = [
   { n:"Álex Berenguer",       nat:"ES", dob:1995, pos:"MF", clubs:["Osasuna","Torino","Athletic Bilbao"] },
   { n:"Yeray Álvarez",        nat:"ES", dob:1995, pos:"DF", clubs:["Athletic Bilbao"] },
   { n:"José María Giménez",   nat:"UY", dob:1995, pos:"DF", clubs:["Danubio","Atlético Madrid"] },
+
+  // ═══════ Algérie ═══════
+  { n:"Islam Slimani",        nat:"DZ", dob:1988, pos:"AT", clubs:["Sporting CP","Leicester City","Monaco","Lyon"] },
+  { n:"Ismaël Bennacer",      nat:"DZ", dob:1997, pos:"MF", clubs:["Empoli","AC Milan"] },
+  { n:"Ramy Bensebaini",      nat:"DZ", dob:1995, pos:"DF", clubs:["Rennes","Borussia Mönchengladbach","Borussia Dortmund"] },
+  { n:"Sofiane Feghouli",     nat:"DZ", dob:1989, pos:"MF", clubs:["Grenoble","Valencia","West Ham United","Galatasaray"] },
+  { n:"Rachid Ghezzal",       nat:"DZ", dob:1992, pos:"MF", clubs:["Lyon","Monaco","Leicester City","Beşiktaş"] },
 ];
 
 export const AVERAGE_CLUBS_PER_PLAYER =
