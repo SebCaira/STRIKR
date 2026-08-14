@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { ensureAdsInitialized } from './src/lib/ads';
 import { MONETIZATION_LIVE } from './src/data/shop';
 import { initIAP } from './src/lib/iap';
+import { logEvent } from './src/lib/analytics';
 import {
   useFonts,
   InterTight_700Bold,
@@ -40,11 +41,23 @@ function AppShell() {
   const { session, loading } = useAuth();
   const { ready: diamondsReady } = useDiamonds();
   const { ready: statsReady } = useStats();
+  const loggedOpen = useRef(false);
 
   // Only connects to the store once purchases are actually live — no point
   // opening a StoreKit connection while ShopScreen still shows "coming soon".
   useEffect(() => {
     if (session && MONETIZATION_LIVE) initIAP();
+  }, [session]);
+
+  // One 'app_open' per app launch (not per re-render/session refresh) — the
+  // only way to see day-1/day-7 retention later: 'login'/'signup' only fire
+  // once ever per account, so without this there'd be no signal at all for
+  // an already-authenticated user simply coming back on a later day.
+  useEffect(() => {
+    if (session && !loggedOpen.current) {
+      loggedOpen.current = true;
+      logEvent(session.user.id, 'app_open');
+    }
   }, [session]);
 
   if (loading) {

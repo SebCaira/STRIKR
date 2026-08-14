@@ -6,6 +6,7 @@
 // which is scoped to the guess-the-player mechanic).
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { logEvent } from '../lib/analytics';
 import { useAuth } from './auth';
 import { useDiamonds } from './diamonds';
 
@@ -299,6 +300,12 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         }
         return next;
       });
+      // Single choke point every game mode already calls on a win (main
+      // game, daily, duel, club guess, grille, group games...) — the
+      // cheapest way to get real engagement data (which modes people
+      // actually finish, by day) without instrumenting each mode
+      // separately.
+      logEvent(user?.id, 'game_win', { kind, firstTry, level });
     },
     [user]
   );
