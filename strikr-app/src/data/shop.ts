@@ -2,18 +2,24 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md), but OFF. Three independent fixes
-// tried on real devices — the RN TurboModule patch, downgrading
+// AdMob is wired in (see ACTIVATION.md). Three independent fixes tried on
+// real devices — the RN TurboModule patch, downgrading
 // react-native-google-mobile-ads to a pre-TurboModule version, and adding
 // the missing UMP/GDPR consent flow (kept, it's a real requirement
 // regardless) — all produced the exact same crash (build 40/41/42, byte-
 // for-byte identical stack traces). See src/lib/ads.ts for the full
-// history. Conclusion: this needs a different ad SDK entirely, not
-// another variation of react-native-google-mobile-ads. Every ADS_LIVE
-// check below routes to the pre-monetization "instant success" fallback
-// (ShopScreen, useInterstitialAd, useGameEngine's doubleReward) so
-// players still get their reward, just without an actual ad.
-export const ADS_LIVE = false;
+// history and a 4th, not-yet-tested hypothesis found afterwards (ad
+// objects were being created before the SDK finished initializing) —
+// ADS_LIVE is flipped back on here specifically to test that fix on
+// build 45 via `eas update` (no new native build needed, AdMob is
+// already compiled in). If this crashes again on a real device, flip it
+// back to false immediately and switch to a different ad SDK entirely —
+// AppLovin MAX is blocked until the app is live on the App Store, so
+// don't retry that until then. Every ADS_LIVE check below routes to the
+// pre-monetization "instant success" fallback (ShopScreen,
+// useInterstitialAd, useGameEngine's doubleReward) so players still get
+// their reward when it's off, just without an actual ad.
+export const ADS_LIVE = true;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
