@@ -33,6 +33,17 @@ const STORAGE_KEY = 'strikr_daily_state_v1';
 
 interface PersistedDaily {
   date: string;
+  // Pins today's target player so it can never change again once picked —
+  // pickDailyPlayer() indexes into PLAYERS by date % PLAYERS.length, so
+  // any edit to players.ts (even a same-day OTA update, like the Algeria
+  // additions) shifts PLAYERS.length and silently picks a different
+  // player. Without this, guesses typed against this morning's target
+  // stayed on screen after such an update while the name banner (which
+  // re-reads state.player fresh) switched to the newly-computed one,
+  // showing an old guess next to a different player's name. Optional so
+  // rounds persisted before this fix (no `player` field) still load —
+  // those fall back to the freshly-computed target, same as before.
+  player?: Player;
   guesses: DailyGuess[];
   locked: Record<number, string>;
   hintedPresent: string[];
@@ -83,15 +94,21 @@ export function useDailyEngine() {
         try {
           const persisted: PersistedDaily = JSON.parse(raw);
           if (persisted.date === todayStr()) {
-            setState((prev) => ({
-              ...prev,
-              guesses: persisted.guesses,
-              locked: persisted.locked,
-              hintedPresent: persisted.hintedPresent || [],
-              status: persisted.status,
-              rewardGiven: persisted.rewardGiven,
-              current: makeEmptyCurrent(prev.target, persisted.locked),
-            }));
+            setState((prev) => {
+              const player = persisted.player || prev.player;
+              const target = persisted.player ? targetLetters(persisted.player) : prev.target;
+              return {
+                ...prev,
+                player,
+                target,
+                guesses: persisted.guesses,
+                locked: persisted.locked,
+                hintedPresent: persisted.hintedPresent || [],
+                status: persisted.status,
+                rewardGiven: persisted.rewardGiven,
+                current: makeEmptyCurrent(target, persisted.locked),
+              };
+            });
           }
         } catch {
           // ignore corrupt storage, keep the fresh init() state
@@ -104,6 +121,7 @@ export function useDailyEngine() {
     if (!loaded) return;
     const persisted: PersistedDaily = {
       date: todayStr(),
+      player: state.player,
       guesses: state.guesses,
       locked: state.locked,
       hintedPresent: state.hintedPresent,
@@ -111,7 +129,7 @@ export function useDailyEngine() {
       rewardGiven: state.rewardGiven,
     };
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(persisted)).catch(() => {});
-  }, [loaded, state.guesses, state.locked, state.hintedPresent, state.status, state.rewardGiven]);
+  }, [loaded, state.player, state.guesses, state.locked, state.hintedPresent, state.status, state.rewardGiven]);
 
   useEffect(() => {
     if (state.status === 'won' && !state.rewardGiven) {
