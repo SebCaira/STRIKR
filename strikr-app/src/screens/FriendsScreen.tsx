@@ -76,7 +76,6 @@ export default function FriendsScreen() {
   );
 
   const podium = friends.slice(0, 3);
-  const rest = friends.slice(3);
   // Visual order for the podium is 2nd / 1st / 3rd.
   const podiumOrder = podium.length === 3 ? [podium[1], podium[0], podium[2]] : podium;
 
@@ -212,8 +211,12 @@ export default function FriendsScreen() {
           <ScrollView contentContainerStyle={{ padding: 20 }}>
             <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, letterSpacing: 1.4, marginBottom: 6 }}>{t('friends_classement')}</Text>
             <View style={{ gap: 5 }}>
-              {(podium.length === 3 ? rest : friends).map((r: FriendRow, i: number) => {
-                const rank = (podium.length === 3 ? 4 : 1) + i;
+              {/* The podium above has no duel-invite button (just a trophy
+                  display), so the top 3 need to appear here too — with 3 or
+                  fewer friends total, slicing them out left the invite
+                  button completely unreachable for everyone. */}
+              {friends.map((r: FriendRow, i: number) => {
+                const rank = i + 1;
                 return (
                   <View key={r.id} style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8 }}>
