@@ -180,44 +180,65 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [levelUpEvent, setLevelUpEvent] = useState<number | null>(null);
   const loadedForUser = useRef<string | null>(null);
+  // True only once a real fetch of the player's row has succeeded — every
+  // Supabase write below is gated on this so a slow/failed load can never
+  // persist DEFAULT_STATS over real progress (see the retry loop below for
+  // why a load can be slow: right after an OTA update, the first launch on
+  // the new bundle does extra cold-start work — bundle verification, a
+  // fresh Metro/Hermes warmup, re-establishing the Supabase session — on
+  // top of the network round trip, so a short one-shot timeout used to
+  // lose that race often enough to look like "the daily streak resets to
+  // day 1 every time there's an update": defaults would load, the UI would
+  // show day 1, and the moment the player did anything, that got written
+  // back to Supabase, permanently overwriting their real streak).
+  const loadedFromServer = useRef(false);
 
   useEffect(() => {
     if (!user) {
       setReady(false);
       loadedForUser.current = null;
+      loadedFromServer.current = false;
       return;
     }
     if (loadedForUser.current === user.id) return;
-    let settled = false;
-    const timeout = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setStats(DEFAULT_STATS);
-      loadedForUser.current = user.id;
-      setReady(true);
-    }, 8000);
-    supabase
-      .from('profiles')
-      .select('stats')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        setStats({ ...DEFAULT_STATS, ...(data?.stats as Partial<StatsData> | undefined) });
-        loadedForUser.current = user.id;
-        setReady(true);
-      })
-      .catch(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        setStats(DEFAULT_STATS);
-        loadedForUser.current = user.id;
-        setReady(true);
-      });
-    return () => clearTimeout(timeout);
+    let cancelled = false;
+    let attempt = 0;
+    const MAX_ATTEMPTS = 5;
+
+    const tryLoad = () => {
+      attempt += 1;
+      supabase
+        .from('profiles')
+        .select('stats')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (cancelled) return;
+          setStats({ ...DEFAULT_STATS, ...(data?.stats as Partial<StatsData> | undefined) });
+          loadedFromServer.current = true;
+          loadedForUser.current = user.id;
+          setReady(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          if (attempt < MAX_ATTEMPTS) {
+            setTimeout(tryLoad, 3000);
+            return;
+          }
+          // Genuinely can't reach the server after several tries — let the
+          // player use the app with local defaults for this session, but
+          // never persist them: loadedFromServer stays false, so every
+          // write below silently skips its Supabase .update() rather than
+          // clobbering the real row the next time this loads successfully.
+          setStats(DEFAULT_STATS);
+          loadedForUser.current = user.id;
+          setReady(true);
+        });
+    };
+    tryLoad();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const recordWin = useCallback(
@@ -273,7 +294,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         const prevLevel = levelForXp(prev.xp).level;
         const nextLevel = levelForXp(next.xp).level;
         if (nextLevel > prevLevel) setLevelUpEvent(nextLevel);
-        if (user) {
+        if (user && loadedFromServer.current) {
           supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
         }
         return next;
@@ -301,7 +322,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         const prevLevel = levelForXp(prev.xp).level;
         const nextLevel = levelForXp(next.xp).level;
         if (nextLevel > prevLevel) setLevelUpEvent(nextLevel);
-        if (user) {
+        if (user && loadedFromServer.current) {
           supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
         }
         return next;
@@ -317,7 +338,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     addDiamonds(-STREAK_FREEZE_COST);
     setStats((prev) => {
       const next = { ...prev, streakFreezes: prev.streakFreezes + 1 };
-      if (user) {
+      if (user && loadedFromServer.current) {
         supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
       }
       return next;
@@ -361,7 +382,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       const prevLevel = levelForXp(prev.xp).level;
       const nextLevel = levelForXp(next.xp).level;
       if (nextLevel > prevLevel) setLevelUpEvent(nextLevel);
-      if (user) {
+      if (user && loadedFromServer.current) {
         supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
       }
       return next;
@@ -373,7 +394,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     setStats((prev) => {
       if (prev.freeHints <= 0) return prev;
       const next = { ...prev, freeHints: prev.freeHints - 1 };
-      if (user) {
+      if (user && loadedFromServer.current) {
         supabase.from('profiles').update({ stats: next }).eq('id', user.id).then(() => {});
       }
       return next;
