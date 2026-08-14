@@ -17,8 +17,7 @@ import { stripAcc } from '../game/engine';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import XIPitch from '../components/XIPitch';
-
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 function norm(s: string): string {
   return stripAcc(s.trim().toLowerCase()).replace(/[^a-z]/g, '');
@@ -36,7 +35,7 @@ interface XIDuelScreenProps {
 
 export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onInviteConsumed }: XIDuelScreenProps) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const rules = useRulesModal('duel_xi');
   const { friends, loading: friendsLoading } = useFriends();
@@ -86,7 +85,9 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
     setMessage(null);
     const { error } = await inviteXIDuel(friendId, friendName, m.id, m.title);
     setInviting(null);
-    if (error) setMessage(error);
+    // Only ever fails on 'not_authenticated' or a raw Supabase error string,
+    // neither meant for display — always the generic translated message.
+    if (error) setMessage(t('error_generic'));
   };
 
   // Ref (not state) so this can only ever fire once per mount, regardless
@@ -356,7 +357,7 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
         {isMyTurn && (
           <>
             <View style={{ marginTop: 10, gap: 4 }}>
-              {KEY_ROWS.map((row, ri) => (
+              {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
                 <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
                   {ri === 2 && <View style={{ flex: 0.5 }} />}
                   {row.split('').map((l) => (

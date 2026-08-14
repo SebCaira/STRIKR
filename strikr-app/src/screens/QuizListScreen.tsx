@@ -15,6 +15,7 @@ import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import PlayerPortrait from '../components/PlayerPortrait';
 import XIPitch from '../components/XIPitch';
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 function norm(s: string): string {
   return stripAcc(s.trim().toLowerCase());
@@ -28,7 +29,6 @@ function normLetters(s: string): string {
   return norm(s).replace(/[^a-z]/g, '');
 }
 
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
 
 const DIFFICULTY_META: Record<QuizDifficulty, { icon: string; labelKey: string; color: 'mint' | 'yellow' | 'wrongRed' }> = {
@@ -46,7 +46,7 @@ type Step = 'difficulty' | 'themes' | 'time' | 'playing';
 // different rules/data source.
 export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: () => void; pool?: 'squad' | 'xi' }) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const rules = useRulesModal(pool === 'xi' ? 'xi' : 'liste');
   const {
@@ -225,7 +225,7 @@ export default function QuizListScreen({ onBack, pool = 'squad' }: { onBack?: ()
           {error && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 8 }}>{error}</Text>}
 
           <View style={{ marginTop: 10, gap: 4 }}>
-            {KEY_ROWS.map((row, ri) => (
+            {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
               <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
                 {ri === 2 && <View style={{ flex: 0.5 }} />}
                 {row.split('').map((l) => (

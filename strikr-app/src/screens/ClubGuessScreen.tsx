@@ -14,8 +14,8 @@ import { flagEmoji } from '../lib/flags';
 import { getClubLogo } from '../lib/wikiLookup';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const CREST_SIZE = 132;
 
 function Crest({ name, revealFraction }: { name: string; revealFraction: number }) {
@@ -89,7 +89,7 @@ function GuessRow({ row }: { row: ClubGuessRow }) {
 
 export default function ClubGuessScreen({ onBack }: { onBack?: () => void }) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { mysteryName, guesses, status, attempt, submitGuess, newRound, rewardsExhausted, rewardedToday, rewardedLimit, lastReward } = useClubGuess();
   const { recordRoundPlayed } = useInterstitialAd();
@@ -205,7 +205,7 @@ export default function ClubGuessScreen({ onBack }: { onBack?: () => void }) {
         {error && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 8 }}>{error}</Text>}
 
         <View style={{ marginTop: 10, gap: 4 }}>
-          {KEY_ROWS.map((row, ri) => (
+          {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
             <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
               {ri === 2 && <View style={{ flex: 0.5 }} />}
               {row.split('').map((l) => (

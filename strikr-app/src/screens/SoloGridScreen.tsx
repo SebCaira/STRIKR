@@ -5,18 +5,18 @@ import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useSoloGrid } from '../game/useSoloGrid';
 import { useInterstitialAd } from '../game/useInterstitialAd';
+import { criterionLabel } from '../game/gridDuel';
 import { PLAYERS } from '../data/players';
 import { stripAcc } from '../game/engine';
 import ClubShield from '../components/ClubShield';
 import { flagEmoji } from '../lib/flags';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
-
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { state, playCell, newGrid, rewardsExhausted, rewardedToday, rewardedLimit } = useSoloGrid();
   const { recordRoundPlayed } = useInterstitialAd();
@@ -75,15 +75,15 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14 }}>
       <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
+        <View style={{ flex: 1, marginRight: 10 }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.ink }}>
             {t('duel_solo_progress')} {filledCount}/9
           </Text>
-          <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, marginTop: 2 }}>
+          <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, marginTop: 2 }} numberOfLines={2}>
             {rewardsExhausted ? t('duel_solo_rewards_done') : `💎 ${rewardedToday}/${rewardedLimit} ${t('duel_solo_rewards_left')}`}
           </Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <Pressable onPress={rules.show} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 999, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: colors.ink }}>?</Text>
           </Pressable>
@@ -100,7 +100,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
             <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6, gap: 3 }}>
               {c.type === 'nat' && <Text style={{ fontSize: 28 }}>{flagEmoji(c.value)}</Text>}
               {c.type === 'club' && <ClubShield name={c.value} size={34} />}
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }}>{c.label}</Text>
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }}>{criterionLabel(c, t)}</Text>
             </View>
           ))}
         </View>
@@ -108,7 +108,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
           <View key={ri} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <View style={{ width: 78, paddingRight: 6, alignItems: 'center', gap: 3 }}>
               {r.type === 'club' && <ClubShield name={r.value} size={34} />}
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{r.label}</Text>
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{criterionLabel(r, t)}</Text>
             </View>
             {state.grid.cols.map((_, ci) => {
               const index = ri * 3 + ci;
@@ -151,7 +151,7 @@ export default function SoloGridScreen({ onExit }: { onExit: () => void }) {
             {cellError && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 8 }}>{cellError}</Text>}
 
             <View style={{ marginTop: 10, gap: 4 }}>
-              {KEY_ROWS.map((row, ri) => (
+              {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
                 <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
                   {ri === 2 && <View style={{ flex: 0.5 }} />}
                   {row.split('').map((l) => (

@@ -51,8 +51,12 @@ export default function ProfilScreen() {
     setAvatarUploading(false);
     if (url) {
       setAvatarUrl(url);
+    } else if (error === 'permission_denied') {
+      Alert.alert(t('profil_avatar_error_title'), t('profil_avatar_permission_denied'));
     } else if (error) {
-      Alert.alert('Avatar upload error', error);
+      // Storage upload failures come back as a raw debug string (status
+      // code, byte size) meant for logs, not players — never shown as-is.
+      Alert.alert(t('profil_avatar_error_title'), t('error_generic'));
     }
   };
 

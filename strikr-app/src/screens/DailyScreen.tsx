@@ -9,6 +9,7 @@ import { MAX_ROWS } from '../game/dailyEngine';
 import { LETTER_HINT_COSTS } from '../game/engine';
 import PlayerPortrait from '../components/PlayerPortrait';
 import { cardRarity } from '../game/cardCollection';
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 const TILE_COLORS = {
   exact: { bg: '#ffe66b', fg: '#1a1a1a' },
@@ -16,11 +17,9 @@ const TILE_COLORS = {
   absent: { bg: '#2b3ff2', fg: '#ffffff' },
 } as const;
 
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
-
 export default function DailyScreen() {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { state, diamonds, letterState, justCompleted, clearJustCompleted, typeLetter, backspace, submitGuess, buyLetterHint, letterHintExhausted } =
@@ -43,7 +42,7 @@ export default function DailyScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Pressable onPress={() => navigation.goBack()}>
-          <Text style={{ fontFamily: fonts.displayBold, fontSize: 20, color: colors.ink }}>←</Text>
+          <Text style={{ fontFamily: fonts.displayBold, fontSize: 22, color: colors.ink }}>←</Text>
         </Pressable>
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: accent.coral, letterSpacing: 1.4, textTransform: 'uppercase' }}>{t('daily_kicker')}</Text>
@@ -162,7 +161,7 @@ export default function DailyScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 14, paddingBottom: Math.max(20, insets.bottom + 10), gap: 4 }}>
-        {KEY_ROWS.map((row, ri) => (
+        {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
           <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
             {ri === 2 && <View style={{ flex: 0.5 }} />}
             {row.split('').map((l) => {

@@ -12,7 +12,6 @@ import { useI18n } from '../i18n/i18n';
 import { useSolvedPlayers } from '../state/solvedPlayers';
 import { PLAYERS, Player } from '../data/players';
 import { cardRarity, CardRarity } from '../game/cardCollection';
-import { NAT_FR, POS_FR } from '../game/engine';
 import { clubYearsLabel } from '../data/playerClubYears';
 import PlayerPortrait from '../components/PlayerPortrait';
 import ClubShield from '../components/ClubShield';
@@ -87,10 +86,10 @@ export default function CollectionScreen() {
               <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.ink, marginTop: 10, textAlign: 'center' }}>{selected.n}</Text>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                 <View style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: '#1a1a1a', borderRadius: 999 }}>
-                  <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: '#fff' }}>{NAT_FR[selected.nat] || selected.nat}</Text>
+                  <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: '#fff' }}>{t('nat_' + selected.nat) || selected.nat}</Text>
                 </View>
                 <View style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
-                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink }}>{POS_FR[selected.pos] || selected.pos}</Text>
+                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink }}>{t('pos_' + selected.pos) || selected.pos}</Text>
                 </View>
                 <View style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999 }}>
                   <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink }}>{selected.dob}</Text>

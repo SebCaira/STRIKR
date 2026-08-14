@@ -15,7 +15,7 @@ import { useInterstitialAd } from '../game/useInterstitialAd';
 import { PLAYERS } from '../data/players';
 import { Level, clubColor, clubInit, matchesGuess, stripAcc } from '../game/engine';
 import { MAX_GUESSES, ClubGuessRow, compareClubGuess, resolveClubGuess } from '../game/useClubGuess';
-import { matchesCriteria } from '../game/gridDuel';
+import { matchesCriteria, criterionLabel } from '../game/gridDuel';
 import { CLUB_DATA } from '../data/clubData';
 import { QUIZ_LISTS, QuizDifficulty, playerFull, playerBase, playerPhoto } from '../data/quizLists';
 import { XI_MATCHES } from '../data/xiMatches';
@@ -28,8 +28,8 @@ import PlayerPortrait from '../components/PlayerPortrait';
 import XIPitch from '../components/XIPitch';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
 const DURATIONS = [60, 90, 120, 180];
 const LEVEL_META: Record<Level, { icon: string; labelKey: string }> = {
   easy: { icon: '🟢', labelKey: 'quiz_difficulty_easy' },
@@ -127,7 +127,7 @@ export default function GroupGameScreen({
   onInviteConsumed,
 }: GroupGameScreenProps) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const rules = useRulesModal(listPool === 'xi' ? 'group_xi' : variant === 'duel' ? `duel_${gameType}` : 'group');
   const { user } = useAuth();
@@ -179,7 +179,9 @@ export default function GroupGameScreen({
     autoInviteFiredRef.current = true;
     setCreateError(null);
     createGroup([inviteUserId], [inviteUserName || ''], roundSeconds, gameType).then(({ error }) => {
-      if (error) setCreateError(error);
+      // Only ever a raw internal slug or a raw Supabase error string,
+      // neither meant for display — always the generic translated message.
+      if (error) setCreateError(t('error_generic'));
     });
   }, [variant, inviteUserId, inviteUserName, loading, game, roundSeconds, gameType, createGroup]);
 
@@ -276,7 +278,7 @@ export default function GroupGameScreen({
     setCreateError(null);
     const names = selectedFriendIds.map((id) => friends.find((f) => f.id === id)?.display_name || '');
     const { error } = await createGroup(selectedFriendIds, names, roundSeconds, gameType);
-    if (error) setCreateError(error);
+    if (error) setCreateError(t('error_generic'));
     setBusy(false);
   };
 
@@ -756,7 +758,7 @@ export default function GroupGameScreen({
 
     const keyboard = (
       <View style={{ marginTop: 8, gap: 4 }}>
-        {KEY_ROWS.map((row, ri) => (
+        {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
           <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
             {ri === 2 && <View style={{ flex: 0.5 }} />}
             {row.split('').map((l) => (
@@ -953,7 +955,7 @@ export default function GroupGameScreen({
                 <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6, gap: 3 }}>
                   {c.type === 'nat' && <Text style={{ fontSize: 24 }}>{flagEmoji(c.value)}</Text>}
                   {c.type === 'club' && <ClubShield name={c.value} size={30} />}
-                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink, textAlign: 'center' }}>{c.label}</Text>
+                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink, textAlign: 'center' }}>{criterionLabel(c, t)}</Text>
                 </View>
               ))}
             </View>
@@ -961,7 +963,7 @@ export default function GroupGameScreen({
               <View key={ri} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                 <View style={{ width: 70, paddingRight: 6, alignItems: 'center', gap: 3 }}>
                   {r.type === 'club' && <ClubShield name={r.value} size={30} />}
-                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{r.label}</Text>
+                  <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{criterionLabel(r, t)}</Text>
                 </View>
                 {grid.cols.map((_, ci) => {
                   const index = ri * 3 + ci;

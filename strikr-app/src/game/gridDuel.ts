@@ -3,7 +3,7 @@
 // satisfies both the row and column criteria and hasn't already been used
 // elsewhere in this grid; first to align 3 cells wins, like tic-tac-toe.
 import { PLAYERS, Player } from '../data/players';
-import { NAT_FR, stripAcc } from './engine';
+import { stripAcc } from './engine';
 
 export type CriterionType = 'club' | 'nat';
 
@@ -879,8 +879,18 @@ export function generateGrid(): DuelGrid {
   const [clubValues, natValues] = VALID_GRIDS[Math.floor(Math.random() * VALID_GRIDS.length)];
   return {
     rows: clubValues.map((value) => ({ type: 'club', value, label: value })),
-    cols: natValues.map((value) => ({ type: 'nat', value, label: NAT_FR[value] || value })),
+    // `label` here is just the nat code, unused for display (nationality
+    // labels are language-dependent — see criterionLabel() below, which
+    // resolves the real text at render time via t('nat_' + code)).
+    cols: natValues.map((value) => ({ type: 'nat', value, label: value })),
   };
+}
+
+// Row/column headers use this instead of reading `.label` directly:
+// nationality display text depends on the current app language, which a
+// plain data field baked in at grid-generation time can't reflect.
+export function criterionLabel(c: Criterion, t: (key: string) => string): string {
+  return c.type === 'nat' ? t('nat_' + c.value) : c.value;
 }
 
 export const WIN_LINES: number[][] = [

@@ -81,7 +81,7 @@ export default function MissionsScreen() {
       iconBg: accent.pink,
       title: t('mission_4_title'),
       progress: 0,
-      progressLabel: '0/3 · nécessite des amis en ligne',
+      progressLabel: t('mission_4_progress_label'),
       cardBg: colors.card,
       xp: 200,
     },
@@ -99,7 +99,7 @@ export default function MissionsScreen() {
           {t('missions_title_1')} <Text style={{ color: accent.coral }}>{t('missions_title_2')}</Text>
         </Text>
         <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17 }}>
-          4 défis, <Text style={{ fontFamily: fonts.bodySemibold }}>+800 XP</Text> + badge légendaire.
+          {t('missions_subtitle_1')} <Text style={{ fontFamily: fonts.bodySemibold }}>{t('missions_subtitle_2')}</Text> {t('missions_subtitle_3')}
         </Text>
       </View>
 
@@ -152,9 +152,7 @@ export default function MissionsScreen() {
               <Text style={{ fontSize: 20 }}>{weeklyDone ? '✅' : '👑'}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>
-                Défi <Text style={{ color: accent.yellow }}>HEBDO</Text>
-              </Text>
+              <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('mission_5_title')}</Text>
               <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 10, color: 'rgba(255,255,255,.75)', marginTop: 1 }}>{t('mission_5_detail')}</Text>
               <View style={{ height: 5, backgroundColor: 'rgba(255,255,255,.15)', borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
                 <View style={{ width: `${weeklyProgress}%`, height: '100%', backgroundColor: accent.yellow }} />

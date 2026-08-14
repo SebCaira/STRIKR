@@ -6,6 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { DUEL_TURN_SECONDS, useDuel } from '../game/useDuel';
 import { useInterstitialAd } from '../game/useInterstitialAd';
+import { criterionLabel } from '../game/gridDuel';
 import { PLAYERS } from '../data/players';
 import { stripAcc } from '../game/engine';
 import HardShadowBox from '../components/HardShadowBox';
@@ -13,8 +14,7 @@ import ClubShield from '../components/ClubShield';
 import { flagEmoji } from '../lib/flags';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
-
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 interface DuelScreenProps {
   onBack?: () => void;
@@ -25,7 +25,7 @@ interface DuelScreenProps {
 
 export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInviteConsumed }: DuelScreenProps) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { duel, loading, myRole, createDuel, inviteDuel, respondInvite, cancelInvite, joinDuel, playCell, passTurn, forfeit, clearFinished, lastReward, rewardedToday, rewardedLimit } = useDuel();
   const { recordRoundPlayed } = useInterstitialAd();
@@ -39,7 +39,11 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
     if (!inviteUserId || loading || duel) return;
     setMessage(null);
     inviteDuel(inviteUserId, inviteUserName || '').then(({ error }) => {
-      if (error) setMessage(error);
+      // createDuel/inviteDuel only ever fail on 'not_authenticated' (can't
+      // really happen, this screen requires being signed in) or a raw
+      // Supabase error string — neither is meant for display, so always
+      // show the generic translated message instead of leaking either.
+      if (error) setMessage(t('error_generic'));
     });
     onInviteConsumed?.();
   }, [inviteUserId, inviteUserName, loading, duel, inviteDuel, onInviteConsumed]);
@@ -82,7 +86,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
     setMessage(null);
     const { error } = await createDuel();
     setBusy(false);
-    if (error) setMessage(error);
+    if (error) setMessage(t('error_generic'));
   };
 
   const onJoin = async () => {
@@ -323,7 +327,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
             <View key={i} style={{ flex: 1, alignItems: 'center', paddingBottom: 6, gap: 3 }}>
               {c.type === 'nat' && <Text style={{ fontSize: 28 }}>{flagEmoji(c.value)}</Text>}
               {c.type === 'club' && <ClubShield name={c.value} size={34} />}
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }}>{c.label}</Text>
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }}>{criterionLabel(c, t)}</Text>
             </View>
           ))}
         </View>
@@ -331,7 +335,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
           <View key={ri} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
             <View style={{ width: 78, paddingRight: 6, alignItems: 'center', gap: 3 }}>
               {r.type === 'club' && <ClubShield name={r.value} size={34} />}
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{r.label}</Text>
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: colors.ink, textAlign: 'center' }} numberOfLines={2}>{criterionLabel(r, t)}</Text>
             </View>
             {duel.grid.cols.map((_, ci) => {
               const index = ri * 3 + ci;
@@ -375,7 +379,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
             {cellError && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: accent.coral, marginTop: 8 }}>{cellError}</Text>}
 
             <View style={{ marginTop: 10, gap: 4 }}>
-              {KEY_ROWS.map((row, ri) => (
+              {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
                 <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
                   {ri === 2 && <View style={{ flex: 0.5 }} />}
                   {row.split('').map((l) => (

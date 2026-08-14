@@ -119,16 +119,8 @@ export function flagUrl(nat: string, width = 60): string | null {
   return `https://commons.wikimedia.org/wiki/Special:FilePath/Flag_of_${encodeURIComponent(country)}.svg?width=${width}`;
 }
 
-export const NAT_FR: Record<string, string> = {
-  NO: 'NORVÈGE', FR: 'FRANCE', AR: 'ARGENTINE', PT: 'PORTUGAL', EN: 'ANGLETERRE', BR: 'BRÉSIL', ES: 'ESPAGNE',
-  BE: 'BELGIQUE', EG: 'ÉGYPTE', PL: 'POLOGNE', HR: 'CROATIE', KR: 'CORÉE', DE: 'ALLEMAGNE', UY: 'URUGUAY',
-  SN: 'SÉNÉGAL', DZ: 'ALGÉRIE', MA: 'MAROC', GA: 'GABON', CI: "CÔTE D'IVOIRE", CM: 'CAMEROUN', GH: 'GHANA',
-  GN: 'GUINÉE', NL: 'PAYS-BAS', IT: 'ITALIE', RS: 'SERBIE', GE: 'GÉORGIE', NG: 'NIGERIA', SE: 'SUÈDE',
-  PY: 'PARAGUAY', CO: 'COLOMBIE', CA: 'CANADA', SI: 'SLOVÉNIE', UA: 'UKRAINE',
-  WAL: 'PAYS DE GALLES', JP: 'JAPON', AU: 'AUSTRALIE', US: 'ÉTATS-UNIS', TG: 'TOGO', EC: 'ÉQUATEUR',
-  HU: 'HONGRIE', TR: 'TURQUIE', CH: 'SUISSE', DK: 'DANEMARK', CL: 'CHILI', CR: 'COSTA RICA',
-  AT: 'AUTRICHE', BA: 'BOSNIE', BF: 'BURKINA FASO', BG: 'BULGARIE', CZ: 'TCHÉQUIE', JM: 'JAMAÏQUE',
-  LR: 'LIBERIA', MX: 'MEXIQUE', RO: 'ROUMANIE', RU: 'RUSSIE', SK: 'SLOVAQUIE', TN: 'TUNISIE',
-};
-
-export const POS_FR: Record<string, string> = { GK: 'GARDIEN', DF: 'DÉFENSEUR', MF: 'MILIEU', AT: 'ATTAQUANT' };
+// Nationality/position display labels moved to the i18n dict (nat_XX /
+// pos_XX keys) — this used to be a French-only lookup table, so switching
+// the app language to English/Spanish left every "ATTAQUANT"/"GARDIEN"/
+// country badge in French regardless. Look them up with
+// t('nat_' + code) / t('pos_' + code) instead.

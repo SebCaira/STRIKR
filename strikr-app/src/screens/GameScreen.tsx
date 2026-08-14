@@ -6,7 +6,7 @@ import { useI18n } from '../i18n/i18n';
 import { useGameEngine } from '../game/useGameEngine';
 import { useInterstitialAd } from '../game/useInterstitialAd';
 import { useStats } from '../state/stats';
-import { GAME_WIN_XP, HINT_COSTS, Level, NAT_FR, POS_FR, flagUrl, streakMultiplier } from '../game/engine';
+import { GAME_WIN_XP, HINT_COSTS, Level, flagUrl, streakMultiplier } from '../game/engine';
 import ClubShield from '../components/ClubShield';
 import PlayerPortrait from '../components/PlayerPortrait';
 import HardShadowBox from '../components/HardShadowBox';
@@ -15,12 +15,11 @@ import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import { clubYearsLabel } from '../data/playerClubYears';
 import { cardRarity, CardRarity } from '../game/cardCollection';
-
-const KEY_ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
+import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
 
 export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
   const { colors, accent, fonts } = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { state, diamonds, suggestions, pickPlayer, setGuess, submit, buyHint, skipOrForfeit, doubleReward, doubling } = useGameEngine();
   const { recordRoundPlayed } = useInterstitialAd();
@@ -140,9 +139,9 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
           <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, letterSpacing: 1.4, marginBottom: 5 }}>{t('game_hints_label')}</Text>
           <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
             <HintChip kind="nat" icon="🌍" label={t('hint_nat')} state={state} diamonds={diamonds} buyHint={buyHint}
-              revealed={state.hints.nat ? `${flagUrl(player.nat) ? '🏳 ' : ''}${NAT_FR[player.nat] || player.nat}` : undefined} />
+              revealed={state.hints.nat ? `${flagUrl(player.nat) ? '🏳 ' : ''}${t('nat_' + player.nat)}` : undefined} />
             <HintChip kind="pos" icon="⚽" label={t('hint_pos')} state={state} diamonds={diamonds} buyHint={buyHint}
-              revealed={state.hints.pos ? (POS_FR[player.pos] || player.pos) : undefined} />
+              revealed={state.hints.pos ? t('pos_' + player.pos) : undefined} />
             <HintChip kind="age" icon="🎂" label={t('hint_age')} state={state} diamonds={diamonds} buyHint={buyHint}
               revealed={state.hints.age ? `${2026 - player.dob} ${t('hint_age_suffix')}` : undefined} />
           </View>
@@ -184,7 +183,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
         </View>
 
         <View style={{ marginTop: 8, gap: 4 }}>
-          {KEY_ROWS.map((row, ri) => (
+          {KEY_ROWS_BY_LANG[lang].map((row, ri) => (
             <View key={ri} style={{ flexDirection: 'row', gap: 4 }}>
               {ri === 2 && <View style={{ flex: 0.5 }} />}
               {row.split('').map((l) => (
@@ -318,8 +317,8 @@ function WinOverlay({
   const lastName = parts[parts.length - 1].toUpperCase();
   const firstName = parts.slice(0, -1).join(' ');
   const flag = flagUrl(player.nat, 60);
-  const natLabel = NAT_FR[player.nat] || player.nat || '';
-  const posLabel = POS_FR[player.pos] || player.pos || '';
+  const natLabel = t('nat_' + player.nat) || player.nat || '';
+  const posLabel = t('pos_' + player.pos) || player.pos || '';
   const multiplier = streakMultiplier(winStreak);
   const diamondsReward = reward;
   const ordinals = tArray('ordinals');
@@ -449,8 +448,8 @@ function LostOverlay({ player, onRetry }: { player: any; onRetry: () => void }) 
   const lastName = parts[parts.length - 1].toUpperCase();
   const firstName = parts.slice(0, -1).join(' ');
   const flag = flagUrl(player.nat, 60);
-  const natLabel = NAT_FR[player.nat] || player.nat || '';
-  const posLabel = POS_FR[player.pos] || player.pos || '';
+  const natLabel = t('nat_' + player.nat) || player.nat || '';
+  const posLabel = t('pos_' + player.pos) || player.pos || '';
 
   return (
     <View style={{ flex: 1, backgroundColor: '#2b3ff2' }}>
