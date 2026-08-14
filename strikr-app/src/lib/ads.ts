@@ -44,6 +44,18 @@ import mobileAds, { AdEventType, AdsConsent, AdsConsentStatus, InterstitialAd, R
 // theory entirely, and — unlike the RN patch and the library downgrade —
 // hasn't been tried yet. Consent gathering is now wired into
 // ensureAdsInitialized() below, before mobileAds().initialize().
+//
+// Root cause, step 5 (Expo support reply, Aug 2026) — the real one:
+// step 1's whole premise was wrong. newArchEnabled is false in app.json,
+// so the New Architecture TurboModule code the RN patch targeted was
+// never even running — that's exactly why patching it changed nothing.
+// com.facebook.react.ExceptionsManagerQueue is React Native's *legacy*
+// bridge ExceptionsManager: in a release build, an uncaught JS exception
+// thrown inside a native-invoked callback gets rethrown as a native
+// RCTFatalException and aborts the app. So this was always a plain,
+// catchable bug in our own JS, not an unfixable native/iOS 26 issue. See
+// the fix at showRewardedAd()/showInterstitialAd() below (in-flight guard
+// + try/catch around show()) for the concrete bug this most likely was.
 const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
@@ -107,6 +119,35 @@ export function ensureAdsInitialized() {
 let rewarded: RewardedAd | null = null;
 let interstitial: InterstitialAd | null = null;
 
+// Root cause, step 5 (Expo support, Aug 2026): steps 1-4 above chased the
+// wrong layer entirely — newArchEnabled is false in app.json, so the
+// TurboModule/New-Architecture theory in step 1 never applied here in the
+// first place (that's *why* the RN patch changed nothing: the code it
+// patched was never running). Expo support traced
+// com.facebook.react.ExceptionsManagerQueue to React Native's *legacy*
+// bridge: in a release build, any uncaught JS exception thrown inside a
+// native-invoked callback (e.g. an AdEventType listener) gets rethrown as
+// a native RCTFatalException and aborts the whole app — this is an
+// ordinary, catchable bug in our own JS, not an unfixable native/iOS 26
+// issue.
+//
+// showRewardedAd() has two independent callers (ShopScreen's "watch an
+// ad" button and useGameEngine's doubleReward) that each only guard
+// against re-entering *themselves* — neither knows about the other. If
+// one call is abandoned mid-flight (e.g. leaving Shop before its ad
+// resolves) while `rewarded` still points at that same not-yet-settled
+// ad object, a second call from the other caller reuses it instead of a
+// fresh instance, so two independent LOADED listeners can both end up
+// calling show() on the same ad — calling show() twice on one ad is a
+// documented way to make AdMob's SDK throw. rewardedInFlight below
+// closes that gap: a second concurrent call fails immediately instead of
+// sharing state with one already in progress. current.show() is also now
+// wrapped in try/catch so that if it (or anything else here) throws for
+// any reason at all, the round just continues without an ad — matching
+// the app's own stated philosophy — instead of taking the whole app down.
+let rewardedInFlight = false;
+let interstitialInFlight = false;
+
 function freshRewarded(): RewardedAd {
   rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);
   return rewarded;
@@ -118,6 +159,8 @@ function freshInterstitial(): InterstitialAd {
 }
 
 export async function showRewardedAd(): Promise<{ success: boolean }> {
+  if (rewardedInFlight) return { success: false };
+  rewardedInFlight = true;
   await ensureAdsInitialized();
   return new Promise((resolve) => {
     const current = rewarded || freshRewarded();
@@ -132,6 +175,7 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
       unsubClosed();
       unsubError();
       freshRewarded();
+      rewardedInFlight = false;
       resolve({ success });
     };
     const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);
@@ -139,7 +183,12 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
       earned = true;
     });
     const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
-      current.show();
+      try {
+        current.show();
+      } catch (e) {
+        console.warn('RewardedAd.show() threw', e);
+        finish(false);
+      }
     });
     const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => finish(earned));
     const unsubError = current.addAdEventListener(AdEventType.ERROR, () => finish(false));
@@ -148,6 +197,8 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
 }
 
 export async function showInterstitialAd(): Promise<void> {
+  if (interstitialInFlight) return;
+  interstitialInFlight = true;
   await ensureAdsInitialized();
   return new Promise((resolve) => {
     const current = interstitial || freshInterstitial();
@@ -160,11 +211,17 @@ export async function showInterstitialAd(): Promise<void> {
       unsubClosed();
       unsubError();
       freshInterstitial();
+      interstitialInFlight = false;
       resolve();
     };
     const timeout = setTimeout(finish, LOAD_TIMEOUT);
     const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
-      current.show();
+      try {
+        current.show();
+      } catch (e) {
+        console.warn('InterstitialAd.show() threw', e);
+        finish();
+      }
     });
     const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, finish);
     // Failing to load a real ad shouldn't block the game — the round just

@@ -2,24 +2,24 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md), but OFF. Four independent fixes
-// tried on real devices — the RN TurboModule patch, downgrading
-// react-native-google-mobile-ads to a pre-TurboModule version, adding the
-// missing UMP/GDPR consent flow (kept, it's a real requirement
-// regardless), and creating ad objects only after the SDK finished
-// initializing — all produced the exact same crash (build 40/41/42/45,
-// byte-for-byte identical stack traces: SIGABRT via
-// com.facebook.react.ExceptionsManagerQueue -> objc_exception_rethrow,
-// an uncaught NSException re-thrown and aborting). See src/lib/ads.ts for
-// the full history. Conclusion, now confirmed a 4th time: this is not
-// fixable from this app's code — it needs either an upstream React
-// Native fix for the underlying iOS 26 TurboModule bug, or a different
-// ad SDK entirely once AppLovin MAX becomes usable (blocked until the
-// app is live on the App Store — don't retry it before then). Every
+// AdMob is wired in (see ACTIVATION.md). Four fixes aimed at the wrong
+// layer (build 40/41/42/45, byte-for-byte identical crash each time) —
+// see src/lib/ads.ts for that full history. Expo support's reply finally
+// explained why: newArchEnabled is false, so the New Architecture
+// TurboModule bug those fixes targeted was never actually in play, and
+// com.facebook.react.ExceptionsManagerQueue is React Native's *legacy*
+// bridge — the crash is an ordinary uncaught JS exception (most likely
+// showRewardedAd() reusing a stale, still-in-flight ad instance between
+// its two independent callers and calling show() on it twice) getting
+// rethrown as a native RCTFatalException in a release build. Fixed in
+// ads.ts (in-flight guard + try/catch around show()); ADS_LIVE flipped
+// back on here specifically to test that fix — no new native build
+// needed, AdMob is already compiled in. If this crashes again, flip it
+// back to false immediately; if it doesn't, ads actually work now. Every
 // ADS_LIVE check below routes to the pre-monetization "instant success"
 // fallback (ShopScreen, useInterstitialAd, useGameEngine's doubleReward)
-// so players still get their reward, just without an actual ad.
-export const ADS_LIVE = false;
+// when off, so players still get their reward either way.
+export const ADS_LIVE = true;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there
