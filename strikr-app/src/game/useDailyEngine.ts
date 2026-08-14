@@ -93,22 +93,27 @@ export function useDailyEngine() {
         if (!raw) return;
         try {
           const persisted: PersistedDaily = JSON.parse(raw);
-          if (persisted.date === todayStr()) {
-            setState((prev) => {
-              const player = persisted.player || prev.player;
-              const target = persisted.player ? targetLetters(persisted.player) : prev.target;
-              return {
-                ...prev,
-                player,
-                target,
-                guesses: persisted.guesses,
-                locked: persisted.locked,
-                hintedPresent: persisted.hintedPresent || [],
-                status: persisted.status,
-                rewardGiven: persisted.rewardGiven,
-                current: makeEmptyCurrent(target, persisted.locked),
-              };
-            });
+          // A round saved before this fix has no `player` field, so there's
+          // no way to know which player its guesses actually refer to —
+          // salvaging it by pairing those guesses with a freshly-picked
+          // player would just reproduce the exact bug this fix closes.
+          // Safer to drop it and let the fresh init() state (already
+          // correctly pinned) stand as today's round; the player keeps
+          // whatever diamonds/XP that earlier win already paid out, they'd
+          // just get to (and could) play today's puzzle once more.
+          if (persisted.date === todayStr() && persisted.player) {
+            const target = targetLetters(persisted.player);
+            setState((prev) => ({
+              ...prev,
+              player: persisted.player!,
+              target,
+              guesses: persisted.guesses,
+              locked: persisted.locked,
+              hintedPresent: persisted.hintedPresent || [],
+              status: persisted.status,
+              rewardGiven: persisted.rewardGiven,
+              current: makeEmptyCurrent(target, persisted.locked),
+            }));
           }
         } catch {
           // ignore corrupt storage, keep the fresh init() state
