@@ -303,7 +303,17 @@ export function useGameEngine() {
     const total = state.lastReward + state.cardBonus;
     if (total <= 0) return;
     setDoubling(true);
-    const { success } = ADS_LIVE ? await showRewardedAd() : { success: true };
+    // See ShopScreen's watchAd for why this is wrapped even though
+    // ads.ts's showRewardedAd() is designed to always resolve.
+    let success = true;
+    if (ADS_LIVE) {
+      try {
+        ({ success } = await showRewardedAd());
+      } catch (e) {
+        console.warn('showRewardedAd() rejected', e);
+        success = false;
+      }
+    }
     setDoubling(false);
     if (!success) return;
     addDiamonds(total);

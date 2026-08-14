@@ -20,7 +20,14 @@ export function useInterstitialAd() {
       const count = (Number(raw) || 0) + 1;
       AsyncStorage.setItem(STORAGE_KEY, String(count)).catch(() => {});
       if (count % INTERSTITIAL_EVERY_N_GAMES === 0) {
-        showInterstitialAd().then(onContinue);
+        // See ShopScreen's watchAd for why this is caught even though
+        // ads.ts's showInterstitialAd() is designed to always resolve —
+        // an uncaught rejection here would both crash and strand the
+        // player on the "round just ended" screen forever.
+        showInterstitialAd().then(onContinue).catch((e) => {
+          console.warn('showInterstitialAd() rejected', e);
+          onContinue();
+        });
       } else {
         onContinue();
       }

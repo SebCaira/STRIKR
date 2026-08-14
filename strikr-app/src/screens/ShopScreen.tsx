@@ -73,7 +73,19 @@ export default function ShopScreen() {
       AsyncStorage.setItem(AD_WATCHED_KEY, JSON.stringify({ date: todayStr(), count: next })).catch(() => {});
       return next;
     });
-    const { success } = ADS_LIVE ? await showRewardedAd() : { success: true };
+    // ads.ts's showRewardedAd() is designed to always resolve, never
+    // reject, but this is the kind of code path that's already crashed
+    // the app 5 times over — a try/catch here costs nothing and means a
+    // regression there fails the ad request instead of the whole app.
+    let success = true;
+    if (ADS_LIVE) {
+      try {
+        ({ success } = await showRewardedAd());
+      } catch (e) {
+        console.warn('showRewardedAd() rejected', e);
+        success = false;
+      }
+    }
     setAdWatching(false);
     if (!success) {
       setAdError(true);

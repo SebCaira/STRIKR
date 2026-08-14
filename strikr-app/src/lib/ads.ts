@@ -108,7 +108,18 @@ export function ensureAdsInitialized() {
       } catch (e) {
         console.warn('AdsConsent gathering failed', e);
       }
-      await mobileAds().initialize();
+      // Same reasoning as show()/load() below: this promise is awaited
+      // directly by showRewardedAd()/showInterstitialAd() with nothing
+      // catching a rejection on their end, so a failure here must not
+      // reject either — it would otherwise surface as an unhandled
+      // promise rejection, which is exactly the kind of uncaught JS
+      // exception step 5 in the history above says gets rethrown as a
+      // fatal native crash in production.
+      try {
+        await mobileAds().initialize();
+      } catch (e) {
+        console.warn('mobileAds().initialize() failed', e);
+      }
     })();
   }
   return initPromise;
@@ -158,75 +169,131 @@ function freshInterstitial(): InterstitialAd {
   return interstitial;
 }
 
+// The first attempt at this fix only wrapped show() in try/catch, and
+// still crashed with the byte-for-byte identical signature. That means
+// something else in this chain throws too — createForAdRequest(), load(),
+// or mobileAds().initialize() rejecting up through the unguarded `await
+// ensureAdsInitialized()` below, any of which becomes an unhandled
+// promise rejection with no caller-side try/catch (ShopScreen,
+// useGameEngine, useInterstitialAd all just do a bare `await
+// showRewardedAd()`/`showInterstitialAd()`). So instead of guessing which
+// specific call is the one that throws, everything in both functions now
+// runs inside one top-level try/catch each: whatever happens, the
+// returned promise always resolves, never rejects.
 export async function showRewardedAd(): Promise<{ success: boolean }> {
   if (rewardedInFlight) return { success: false };
   rewardedInFlight = true;
-  await ensureAdsInitialized();
-  return new Promise((resolve) => {
-    const current = rewarded || freshRewarded();
-    let earned = false;
-    let settled = false;
-    const finish = (success: boolean) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      unsubEarned();
-      unsubLoaded();
-      unsubClosed();
-      unsubError();
-      freshRewarded();
-      rewardedInFlight = false;
-      resolve({ success });
-    };
-    const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);
-    const unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-      earned = true;
-    });
-    const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+  try {
+    await ensureAdsInitialized();
+    return await new Promise<{ success: boolean }>((resolve) => {
+      let settled = false;
+      const finish = (success: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        unsubEarned();
+        unsubLoaded();
+        unsubClosed();
+        unsubError();
+        try {
+          freshRewarded();
+        } catch (e) {
+          console.warn('freshRewarded() threw', e);
+        }
+        rewardedInFlight = false;
+        resolve({ success });
+      };
+      let current: RewardedAd;
       try {
-        current.show();
+        current = rewarded || freshRewarded();
       } catch (e) {
-        console.warn('RewardedAd.show() threw', e);
+        console.warn('RewardedAd.createForAdRequest() threw', e);
+        rewardedInFlight = false;
+        resolve({ success: false });
+        return;
+      }
+      let earned = false;
+      const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);
+      const unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+        earned = true;
+      });
+      const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+        try {
+          current.show();
+        } catch (e) {
+          console.warn('RewardedAd.show() threw', e);
+          finish(false);
+        }
+      });
+      const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => finish(earned));
+      const unsubError = current.addAdEventListener(AdEventType.ERROR, () => finish(false));
+      try {
+        current.load();
+      } catch (e) {
+        console.warn('RewardedAd.load() threw', e);
         finish(false);
       }
     });
-    const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => finish(earned));
-    const unsubError = current.addAdEventListener(AdEventType.ERROR, () => finish(false));
-    current.load();
-  });
+  } catch (e) {
+    console.warn('showRewardedAd() failed', e);
+    rewardedInFlight = false;
+    return { success: false };
+  }
 }
 
 export async function showInterstitialAd(): Promise<void> {
   if (interstitialInFlight) return;
   interstitialInFlight = true;
-  await ensureAdsInitialized();
-  return new Promise((resolve) => {
-    const current = interstitial || freshInterstitial();
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      unsubLoaded();
-      unsubClosed();
-      unsubError();
-      freshInterstitial();
-      interstitialInFlight = false;
-      resolve();
-    };
-    const timeout = setTimeout(finish, LOAD_TIMEOUT);
-    const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+  try {
+    await ensureAdsInitialized();
+    return await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        unsubLoaded();
+        unsubClosed();
+        unsubError();
+        try {
+          freshInterstitial();
+        } catch (e) {
+          console.warn('freshInterstitial() threw', e);
+        }
+        interstitialInFlight = false;
+        resolve();
+      };
+      let current: InterstitialAd;
       try {
-        current.show();
+        current = interstitial || freshInterstitial();
       } catch (e) {
-        console.warn('InterstitialAd.show() threw', e);
+        console.warn('InterstitialAd.createForAdRequest() threw', e);
+        interstitialInFlight = false;
+        resolve();
+        return;
+      }
+      const timeout = setTimeout(finish, LOAD_TIMEOUT);
+      const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+        try {
+          current.show();
+        } catch (e) {
+          console.warn('InterstitialAd.show() threw', e);
+          finish();
+        }
+      });
+      const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, finish);
+      // Failing to load a real ad shouldn't block the game — the round just
+      // continues without an interstitial that round.
+      const unsubError = current.addAdEventListener(AdEventType.ERROR, finish);
+      try {
+        current.load();
+      } catch (e) {
+        console.warn('InterstitialAd.load() threw', e);
         finish();
       }
     });
-    const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, finish);
-    // Failing to load a real ad shouldn't block the game — the round just
-    // continues without an interstitial that round.
-    const unsubError = current.addAdEventListener(AdEventType.ERROR, finish);
-    current.load();
-  });
+  } catch (e) {
+    console.warn('showInterstitialAd() failed', e);
+    interstitialInFlight = false;
+  }
 }
