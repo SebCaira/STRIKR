@@ -206,6 +206,8 @@ export const DICT: Record<Lang, Record<string, string | string[]>> = {
       settings_logout: 'Se déconnecter',
       notif_reminder_title: '⚽ Ton puzzle du jour t\'attend',
       notif_reminder_body: 'Retrouve le footballeur mystère et fais grimper ta série sur STRIKR.',
+      notif_streak_risk_title: '🔥 Ta série est en danger !',
+      notif_streak_risk_body: 'Joue une partie avant minuit pour ne pas perdre ta série sur STRIKR.',
       settings_help_title: 'Aide & contact',
       settings_help_body:
         "Devine le footballeur à partir de ses clubs : plus tu te trompes, plus de clubs sont révélés. Utilise tes 💎 pour acheter des indices (nationalité, poste, âge).\n\nDéfi du jour : même joueur pour tout le monde, 6 essais façon Wordle.\n\nAmis : ajoute un ami avec son code pour comparer ton XP et le défier en duel.\n\nUne question ou un bug à signaler ? Un canal de contact dédié arrive bientôt.",
@@ -587,6 +589,8 @@ export const DICT: Record<Lang, Record<string, string | string[]>> = {
       settings_logout: 'Log out',
       notif_reminder_title: "⚽ Today's puzzle is waiting",
       notif_reminder_body: 'Find the mystery footballer and keep your streak going on STRIKR.',
+      notif_streak_risk_title: '🔥 Your streak is at risk!',
+      notif_streak_risk_body: "Play a round before midnight so you don't lose your streak on STRIKR.",
       settings_help_title: 'Help & contact',
       settings_help_body:
         "Guess the footballer from his clubs: the more wrong guesses, the more clubs get revealed. Spend 💎 on hints (nationality, position, age).\n\nDaily challenge: same player for everyone, 6 tries Wordle-style.\n\nFriends: add a friend with their code to compare XP and challenge them to a duel.\n\nQuestion or bug report? A dedicated contact channel is coming soon.",
@@ -966,6 +970,8 @@ export const DICT: Record<Lang, Record<string, string | string[]>> = {
       settings_logout: 'Cerrar sesión',
       notif_reminder_title: '⚽ Tu puzzle del día te espera',
       notif_reminder_body: 'Encuentra al futbolista misterioso y mantén tu racha en STRIKR.',
+      notif_streak_risk_title: '🔥 ¡Tu racha está en peligro!',
+      notif_streak_risk_body: 'Juega una partida antes de medianoche para no perder tu racha en STRIKR.',
       settings_help_title: 'Ayuda y contacto',
       settings_help_body:
         'Adivina al futbolista a partir de sus clubes: cuantos más fallos, más clubes se revelan. Usa tus 💎 para comprar pistas (nacionalidad, posición, edad).\n\nReto diario: mismo jugador para todos, 6 intentos estilo Wordle.\n\nAmigos: añade un amigo con su código para comparar tu XP y desafiarlo en duelo.\n\n¿Alguna pregunta o error que reportar? Un canal de contacto dedicado llegará pronto.',

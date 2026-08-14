@@ -51,6 +51,41 @@ export async function cancelDailyReminder(): Promise<void> {
   await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID).catch(() => {});
 }
 
+// One-off (not recurring) nudge for tonight only, re-evaluated by the
+// caller (see settings.tsx) every time stats change: scheduled when the
+// player has a win streak going but hasn't played today, cancelled the
+// moment they do. This only runs when the app happens to be open (no
+// background timer), so a fixed 20:00 target would silently skip anyone
+// who opens the app later than that with hours still left before
+// midnight — falls back to a later "last call" time instead, and only
+// gives up once even that has passed.
+const STREAK_RISK_ID = 'strikr-streak-risk';
+const STREAK_RISK_HOUR = 20;
+const STREAK_RISK_LAST_CALL_HOUR = 23;
+const STREAK_RISK_LAST_CALL_MINUTE = 30;
+
+export async function scheduleStreakRiskReminder(title: string, body: string): Promise<void> {
+  if (Platform.OS === 'web') return;
+  await Notifications.cancelScheduledNotificationAsync(STREAK_RISK_ID).catch(() => {});
+  let target = new Date();
+  target.setHours(STREAK_RISK_HOUR, 0, 0, 0);
+  if (target.getTime() <= Date.now()) {
+    target = new Date();
+    target.setHours(STREAK_RISK_LAST_CALL_HOUR, STREAK_RISK_LAST_CALL_MINUTE, 0, 0);
+  }
+  if (target.getTime() <= Date.now()) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: STREAK_RISK_ID,
+    content: { title, body, sound: true },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: target },
+  });
+}
+
+export async function cancelStreakRiskReminder(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  await Notifications.cancelScheduledNotificationAsync(STREAK_RISK_ID).catch(() => {});
+}
+
 // Gets (or lazily creates) this device's Expo push token and saves it on the
 // signed-in user's profile so the backend can push friend duel-invite
 // notifications to it. Silently no-ops on web, in Expo Go, or on a

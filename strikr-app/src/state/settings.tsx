@@ -4,9 +4,21 @@
 // without needing a React context.
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, registerPushToken } from '../lib/notifications';
+import {
+  requestNotificationPermission,
+  scheduleDailyReminder,
+  cancelDailyReminder,
+  registerPushToken,
+  scheduleStreakRiskReminder,
+  cancelStreakRiskReminder,
+} from '../lib/notifications';
 import { useI18n } from '../i18n/i18n';
 import { useAuth } from './auth';
+import { useStats } from './stats';
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const KEY = 'strikr_settings_v1';
 
@@ -79,6 +91,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, user]);
+
+  // Re-evaluated on every stats change (i.e. after every win, and once on
+  // load): a one-off "tonight only" nudge, scheduled only while there's an
+  // actual streak on the line the player hasn't extended today yet, and
+  // cancelled the instant they play — never a nag with nothing to lose.
+  const { stats, ready: statsReady } = useStats();
+  useEffect(() => {
+    if (!loaded || !user || !statsReady) return;
+    const atRisk = settings.notificationsEnabled && stats.currentStreak > 0 && stats.lastPlayedDate !== todayStr();
+    if (atRisk) {
+      scheduleStreakRiskReminder(t('notif_streak_risk_title'), t('notif_streak_risk_body'));
+    } else {
+      cancelStreakRiskReminder();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, user, statsReady, settings.notificationsEnabled, stats.currentStreak, stats.lastPlayedDate]);
 
   const update = useCallback((patch: Partial<SettingsData>) => {
     setSettings((prev) => {
