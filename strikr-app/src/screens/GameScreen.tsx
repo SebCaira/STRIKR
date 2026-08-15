@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Image, Modal, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useGameEngine } from '../game/useGameEngine';
 import { useInterstitialAd } from '../game/useInterstitialAd';
 import { useStats } from '../state/stats';
+import { useAuth } from '../state/auth';
+import { supabase } from '../lib/supabase';
 import { GAME_WIN_XP, HINT_COSTS, Level, flagUrl, streakMultiplier } from '../game/engine';
 import ClubShield from '../components/ClubShield';
 import PlayerPortrait from '../components/PlayerPortrait';
@@ -24,6 +26,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
   const { state, diamonds, suggestions, pickPlayer, setGuess, submit, buyHint, skipOrForfeit, doubleReward, doubling } = useGameEngine();
   const { recordRoundPlayed } = useInterstitialAd();
   const { stats } = useStats();
+  const { user } = useAuth();
   const rules = useRulesModal('main');
   const [flashDiamonds, setFlashDiamonds] = useState(false);
   const [resultSnapshot, setResultSnapshot] = useState<{ player: NonNullable<typeof state.player>; solvedAt: number; level: Level; winStreak: number; reward: number; cardBonus: number; isNewCard: boolean; rewardCapped: boolean } | null>(null);
@@ -32,6 +35,28 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
     if (state.status === 'idle') pickPlayer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The "Partager" button on the win screen invites a friend (referral
+  // code) rather than spoiling the round's answer — same code already
+  // shown in Réglages/Amis, just surfaced at the moment a player is most
+  // engaged (right after a win).
+  const [myReferralCode, setMyReferralCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('referral_code')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setMyReferralCode(data?.referral_code ?? null));
+  }, [user]);
+
+  const shareInvite = useCallback(() => {
+    const message = myReferralCode
+      ? `${t('game_share_message_prefix')} ${myReferralCode} ${t('game_share_message_suffix')}`
+      : t('game_share_message_no_code');
+    Share.share({ message }).catch(() => {});
+  }, [myReferralCode, t]);
 
   useEffect(() => {
     if ((state.status === 'won' || state.status === 'lost') && state.player) {
@@ -238,7 +263,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
             doubled={state.doubled}
             doubling={doubling}
             onDouble={doubleReward}
-            onShare={() => {}}
+            onShare={shareInvite}
             onNext={() => recordRoundPlayed(() => pickPlayer())}
           />
         )}

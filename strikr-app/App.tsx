@@ -7,14 +7,21 @@ import { ensureAdsInitialized } from './src/lib/ads';
 import { MONETIZATION_LIVE } from './src/data/shop';
 import { initIAP } from './src/lib/iap';
 import { logEvent } from './src/lib/analytics';
-import {
-  useFonts,
-  InterTight_700Bold,
-  InterTight_800ExtraBold,
-  InterTight_900Black,
-} from '@expo-google-fonts/inter-tight';
-import { SpaceGrotesk_500Medium, SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk';
-import { JetBrainsMono_500Medium, JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono';
+// Each family's barrel index.js does `export const X = require('./weight.ttf')`
+// for every single weight in one file — Metro evaluates the whole module
+// once anything is imported from it, so importing even one named export
+// from the barrel pulled in all ~18 weights' .ttf files as bundled assets.
+// Importing each weight from its own subpath (confirmed by inspecting the
+// packages: every weight folder has its own index.js requiring only that
+// one file) means only the 7 weights actually used ship in the bundle.
+import { useFonts } from 'expo-font';
+import { InterTight_700Bold } from '@expo-google-fonts/inter-tight/700Bold';
+import { InterTight_800ExtraBold } from '@expo-google-fonts/inter-tight/800ExtraBold';
+import { InterTight_900Black } from '@expo-google-fonts/inter-tight/900Black';
+import { SpaceGrotesk_500Medium } from '@expo-google-fonts/space-grotesk/500Medium';
+import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
+import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
+import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold';
 
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { I18nProvider } from './src/i18n/i18n';
