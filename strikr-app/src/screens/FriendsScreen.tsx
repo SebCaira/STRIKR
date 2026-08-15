@@ -6,6 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useFriends, FriendRow } from '../state/friends';
+import { useGlobalLeaderboard, LeaderboardRow } from '../state/leaderboard';
 import { useAuth } from '../state/auth';
 import { supabase } from '../lib/supabase';
 import { avatarColor } from '../lib/avatarColor';
@@ -35,6 +36,8 @@ export default function FriendsScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { friends, requests, loading, refresh, sendRequest, respondRequest } = useFriends();
+  const { rows: globalRows, myRank, loading: globalLoading, refresh: refreshGlobal } = useGlobalLeaderboard();
+  const [tab, setTab] = useState<'friends' | 'global'>('friends');
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -72,10 +75,16 @@ export default function FriendsScreen() {
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+      refreshGlobal();
+    }, [refresh, refreshGlobal])
   );
 
-  const podium = friends.slice(0, 3);
+  // Both tabs share the exact same podium/list layout — only the data
+  // source, the row's trailing badge (duel button vs "TOI" tag on your own
+  // row) and the row subtitle (win streak vs global rank) differ.
+  const list = tab === 'friends' ? friends : globalRows;
+  const listLoading = tab === 'friends' ? loading : globalLoading;
+  const podium = list.slice(0, 3);
   // Visual order for the podium is 2nd / 1st / 3rd.
   const podiumOrder = podium.length === 3 ? [podium[1], podium[0], podium[2]] : podium;
 
@@ -136,7 +145,24 @@ export default function FriendsScreen() {
         </Pressable>
       </View>
 
-      {requests.length > 0 && (
+      <View style={{ marginTop: 14, marginHorizontal: 20, flexDirection: 'row', backgroundColor: colors.track, borderWidth: 2, borderColor: colors.border, borderRadius: 999, padding: 3, alignSelf: 'flex-start' }}>
+        {(['friends', 'global'] as const).map((tb) => (
+          <Pressable
+            key={tb}
+            onPress={() => setTab(tb)}
+            style={{
+              paddingVertical: 7, paddingHorizontal: 16, borderRadius: 999,
+              backgroundColor: tab === tb ? accent.coral : 'transparent',
+            }}
+          >
+            <Text style={{ fontFamily: fonts.display, fontSize: 12, color: tab === tb ? '#fff' : colors.muted }}>
+              {t(tb === 'friends' ? 'friends_tab_friends' : 'friends_tab_global')}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {tab === 'friends' && requests.length > 0 && (
         <View style={{ paddingHorizontal: 20, paddingTop: 14, gap: 6 }}>
           <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, letterSpacing: 1.4 }}>{t('friends_requests_title')}</Text>
           {requests.map((r) => (
@@ -154,14 +180,16 @@ export default function FriendsScreen() {
         </View>
       )}
 
-      {loading ? (
+      {listLoading ? (
         <ActivityIndicator color={colors.muted} style={{ marginTop: 30 }} />
-      ) : friends.length === 0 ? (
+      ) : list.length === 0 ? (
         <View style={{ paddingHorizontal: 20, paddingTop: 24, alignItems: 'center' }}>
           <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 13, color: colors.muted, textAlign: 'center' }}>{t('friends_none')}</Text>
+          {tab === 'friends' && (
           <Pressable onPress={openModal} style={{ marginTop: 14, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 999 }}>
             <Text style={{ fontFamily: fonts.display, fontSize: 12, color: '#fff' }}>{t('friends_add')}</Text>
           </Pressable>
+          )}
         </View>
       ) : (
         <>
@@ -209,16 +237,19 @@ export default function FriendsScreen() {
           )}
 
           <ScrollView contentContainerStyle={{ padding: 20 }}>
-            <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, letterSpacing: 1.4, marginBottom: 6 }}>{t('friends_classement')}</Text>
+            <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted, letterSpacing: 1.4, marginBottom: 6 }}>
+              {t(tab === 'friends' ? 'friends_classement' : 'friends_classement_global')}
+            </Text>
             <View style={{ gap: 5 }}>
               {/* The podium above has no duel-invite button (just a trophy
                   display), so the top 3 need to appear here too — with 3 or
                   fewer friends total, slicing them out left the invite
                   button completely unreachable for everyone. */}
-              {friends.map((r: FriendRow, i: number) => {
+              {list.map((r: FriendRow | LeaderboardRow, i: number) => {
                 const rank = i + 1;
+                const isYou = 'is_you' in r && r.is_you;
                 return (
-                  <View key={r.id} style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+                  <View key={r.id} style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: isYou ? accent.coral : colors.border, borderRadius: 12 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8 }}>
                       <Text style={{ width: 22, fontFamily: fonts.display, fontSize: 13, color: colors.muted, textAlign: 'right' }}>{rank}</Text>
                       <AvatarFrame frameId={r.equipped_frame} size={28}>
@@ -232,22 +263,37 @@ export default function FriendsScreen() {
                       </AvatarFrame>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: fonts.display, fontSize: 12, color: colors.ink }}>{r.display_name}</Text>
-                        <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>
-                          {t('friends_streak')} {r.current_streak}
-                        </Text>
+                        {'current_streak' in r && (
+                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted }}>
+                            {t('friends_streak')} {r.current_streak}
+                          </Text>
+                        )}
                       </View>
                       <Text style={{ fontFamily: fonts.mono, fontSize: 11, color: colors.ink }}>{r.xp} XP</Text>
-                      <Pressable
-                        onPress={() => setChallengeTarget(r)}
-                        style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: accent.coral, alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <Text style={{ fontSize: 13 }}>⚔️</Text>
-                      </Pressable>
+                      {tab === 'friends' ? (
+                        <Pressable
+                          onPress={() => setChallengeTarget(r as FriendRow)}
+                          style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: accent.coral, alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Text style={{ fontSize: 13 }}>⚔️</Text>
+                        </Pressable>
+                      ) : isYou ? (
+                        <View style={{ paddingVertical: 5, paddingHorizontal: 9, backgroundColor: accent.coral, borderRadius: 999 }}>
+                          <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: '#fff' }}>{t('leaderboard_you_tag')}</Text>
+                        </View>
+                      ) : null}
                     </View>
                   </View>
                 );
               })}
             </View>
+            {tab === 'global' && myRank && myRank.rank > list.length && (
+              <View style={{ marginTop: 10, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: colors.border, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <Text style={{ fontFamily: fonts.displayBold, fontSize: 12, color: '#fff' }}>
+                  {t('leaderboard_your_rank_prefix')}{myRank.rank} {t('leaderboard_your_rank_of')} {myRank.total} {t('leaderboard_players_suffix')}
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </>
       )}
