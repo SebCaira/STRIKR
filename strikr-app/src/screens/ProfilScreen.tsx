@@ -41,7 +41,7 @@ export default function ProfilScreen() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const username = user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'Vous';
+  const username = user?.user_metadata?.display_name || user?.email?.split('@')[0] || t('leaderboard_you_tag');
   const ordinals = tArray('ordinals');
 
   const onChangeAvatar = async () => {

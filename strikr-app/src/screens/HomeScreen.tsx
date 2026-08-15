@@ -183,7 +183,7 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 26 }}>🎯</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: colors.muted, letterSpacing: 1.4 }}>{t('home_missions_kicker')}</Text>
-                <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.ink, marginTop: 2 }}>{missions.doneCount}/4 · +{missions.xpAcquis} XP acquis</Text>
+                <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.ink, marginTop: 2 }}>{missions.doneCount}/4 · +{missions.xpAcquis} XP</Text>
                 <View style={{ height: 5, backgroundColor: colors.track, borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
                   <View style={{ width: `${(missions.doneCount / 4) * 100}%`, height: '100%', backgroundColor: accent.coral }} />
                 </View>
