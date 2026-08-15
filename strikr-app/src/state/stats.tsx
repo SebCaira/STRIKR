@@ -7,6 +7,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { logEvent } from '../lib/analytics';
+import { maybeRequestReview } from '../lib/reviewPrompt';
 import { useAuth } from './auth';
 import { useDiamonds } from './diamonds';
 
@@ -325,6 +326,22 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     addDiamonds(levelUpBonus(levelUpEvent));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [levelUpEvent]);
+
+  // Ask for an App Store/Play Store rating right as the streak crosses one
+  // of these — a player is clearly enjoying the app by then, not just
+  // trying it out. Reacts to the committed streak value (like the level-up
+  // effect above) rather than reading it right after setStats(), since
+  // React doesn't guarantee that's applied yet at that point. The ref
+  // tracks the previous value so this only fires on the exact day the
+  // streak crosses the threshold, not on every render once past it.
+  const prevStreakForReview = useRef(stats.currentStreak);
+  useEffect(() => {
+    const prev = prevStreakForReview.current;
+    prevStreakForReview.current = stats.currentStreak;
+    if (stats.currentStreak > prev && (stats.currentStreak === 3 || stats.currentStreak === 10)) {
+      maybeRequestReview();
+    }
+  }, [stats.currentStreak]);
 
   const addBonusXp = useCallback(
     (xp: number) => {
