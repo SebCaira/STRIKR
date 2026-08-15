@@ -1036,6 +1036,17 @@ export default function GroupGameScreen({
     });
   const medals = ['🥇', '🥈', '🥉'];
   const revealLabel = gameType === 'main' ? game.mystery_player : gameType === 'club' ? game.mystery_club : null;
+  const othersJoined = players.filter((p) => p.status === 'joined' && p.user_id !== user?.id);
+  const rematch = () => {
+    if (othersJoined.length === 0) return;
+    setBusy(true);
+    createGroup(
+      othersJoined.map((p) => p.user_id),
+      othersJoined.map((p) => p.display_name),
+      game.round_seconds,
+      gameType
+    ).finally(() => setBusy(false));
+  };
 
   return withBack(
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 60, paddingHorizontal: 20 }}>
@@ -1083,9 +1094,20 @@ export default function GroupGameScreen({
           ))}
         </View>
       </ScrollView>
-      <Pressable onPress={() => recordRoundPlayed(leaveFinished)} style={{ marginVertical: 12, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
-        <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>{t('group_leave')}</Text>
-      </Pressable>
+      <View style={{ flexDirection: 'row', gap: 10, marginVertical: 12 }}>
+        {othersJoined.length > 0 && (
+          <Pressable
+            disabled={busy}
+            onPress={() => recordRoundPlayed(rematch)}
+            style={{ flex: 1, paddingVertical: 14, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center', opacity: busy ? 0.6 : 1 }}
+          >
+            <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>⚔️ {t('duel_rematch')}</Text>
+          </Pressable>
+        )}
+        <Pressable onPress={() => recordRoundPlayed(leaveFinished)} style={{ flex: 1, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>{t('group_leave')}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
