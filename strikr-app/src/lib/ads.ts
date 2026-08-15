@@ -1,7 +1,35 @@
 // Ad adapter — the only place that should know how ads are actually shown.
 // Everything else (ShopScreen, useInterstitialAd) calls these two functions
 // and doesn't care about the AdMob SDK details.
-import mobileAds, { AdEventType, AdsConsent, AdsConsentStatus, InterstitialAd, RewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import { Platform } from 'react-native';
+import type {
+  AdsConsentStatus as AdsConsentStatusT,
+  InterstitialAd as InterstitialAdT,
+  RewardedAd as RewardedAdT,
+} from 'react-native-google-mobile-ads';
+
+// react-native-google-mobile-ads' Android native code doesn't compile under
+// this app's Old Architecture config (newArchEnabled: false) — see
+// react-native.config.js, where its Android autolinking is disabled
+// entirely as a result (Android build was never even attempted before this
+// was found). Its JS entry point calls TurboModuleRegistry.getEnforcing()
+// at *import* time, which throws immediately once nothing is linked to
+// back it — so even importing the package (not just calling into it) would
+// crash the app at every launch on Android, not just skip ads. The whole
+// import is therefore gated behind this platform check; every native call
+// below was already individually wrapped in try/catch from the iOS crash
+// investigation, so `undefined` module bindings resolve safely through
+// those existing guards. iOS is completely unaffected.
+const IS_ANDROID = Platform.OS === 'android';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const GMA = IS_ANDROID ? null : (require('react-native-google-mobile-ads') as typeof import('react-native-google-mobile-ads'));
+const mobileAds = GMA?.default;
+const AdEventType = GMA?.AdEventType;
+const AdsConsent = GMA?.AdsConsent;
+const AdsConsentStatus = GMA?.AdsConsentStatus as typeof AdsConsentStatusT | undefined;
+const InterstitialAd = GMA?.InterstitialAd;
+const RewardedAd = GMA?.RewardedAd;
+const RewardedAdEventType = GMA?.RewardedAdEventType;
 
 // Diagnostic conclusion (see shop.ts's ADS_LIVE): swapping to Google's own
 // test ad units made no difference — the crash reproduced identically —
@@ -127,8 +155,8 @@ export function ensureAdsInitialized() {
 
 // Each ad object is single-use (load → show → gone), so a fresh one is
 // created after every show() to have the next ad ready to load.
-let rewarded: RewardedAd | null = null;
-let interstitial: InterstitialAd | null = null;
+let rewarded: RewardedAdT | null = null;
+let interstitial: InterstitialAdT | null = null;
 
 // Root cause, step 5 (Expo support, Aug 2026): steps 1-4 above chased the
 // wrong layer entirely — newArchEnabled is false in app.json, so the
@@ -159,12 +187,12 @@ let interstitial: InterstitialAd | null = null;
 let rewardedInFlight = false;
 let interstitialInFlight = false;
 
-function freshRewarded(): RewardedAd {
+function freshRewarded(): RewardedAdT {
   rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);
   return rewarded;
 }
 
-function freshInterstitial(): InterstitialAd {
+function freshInterstitial(): InterstitialAdT {
   interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.interstitial);
   return interstitial;
 }
@@ -203,7 +231,7 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
         rewardedInFlight = false;
         resolve({ success });
       };
-      let current: RewardedAd;
+      let current: RewardedAdT;
       try {
         current = rewarded || freshRewarded();
       } catch (e) {
@@ -263,7 +291,7 @@ export async function showInterstitialAd(): Promise<void> {
         interstitialInFlight = false;
         resolve();
       };
-      let current: InterstitialAd;
+      let current: InterstitialAdT;
       try {
         current = interstitial || freshInterstitial();
       } catch (e) {
