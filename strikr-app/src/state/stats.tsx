@@ -213,8 +213,14 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         .select('stats')
         .eq('id', user.id)
         .single()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
           if (cancelled) return;
+          // A request can resolve without throwing (so .catch() below never
+          // fires) yet still carry an `error` — e.g. the Supabase session
+          // isn't fully re-established yet right after an OTA cold start.
+          // Treat that exactly like a network failure (retry) instead of
+          // silently accepting `data: undefined` as "loaded successfully".
+          if (error) throw error;
           setStats({ ...DEFAULT_STATS, ...(data?.stats as Partial<StatsData> | undefined) });
           loadedFromServer.current = true;
           loadedForUser.current = user.id;
