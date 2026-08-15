@@ -52,6 +52,7 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
   const [answer, setAnswer] = useState('');
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [rematching, setRematching] = useState(false);
 
   const updateAnswer = (next: string) => {
     setAnswer(next);
@@ -273,6 +274,13 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
     const myScore = myRole === 'creator' ? duel.creator_score : duel.opponent_score;
     const otherScore = myRole === 'creator' ? duel.opponent_score : duel.creator_score;
     const title = duel.winner === 'draw' ? t('duel_draw_title') : won ? t('duel_win_title') : t('duel_lose_title');
+    const opponentId = myRole === 'creator' ? duel.opponent_id : duel.creator_id;
+    const opponentName = myRole === 'creator' ? duel.opponent_name : duel.creator_name;
+    const rematch = () => {
+      if (!opponentId) return;
+      setRematching(true);
+      inviteXIDuel(opponentId, opponentName || '', duel.match_id, duel.match_title).finally(() => setRematching(false));
+    };
     return withBack(
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
         <Text style={{ fontSize: 48 }}>{duel.winner === 'draw' ? '🤝' : won ? '🏆' : '😔'}</Text>
@@ -283,9 +291,16 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
             {lastReward > 0 ? `+${lastReward} 💎` : `💎 ${rewardedToday}/${rewardedLimit} ${t('club_rewards_left')}`}
           </Text>
         )}
-        <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {opponentId && (
+            <Pressable disabled={rematching} onPress={() => recordRoundPlayed(rematch)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: colors.border, borderRadius: 12, opacity: rematching ? 0.6 : 1 }}>
+              <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>⚔️ {t('duel_rematch')}</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }

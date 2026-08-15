@@ -277,6 +277,13 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
   if (duel.status === 'finished') {
     const won = duel.winner === myRole;
     const title = duel.winner === 'draw' ? t('duel_draw_title') : won ? t('duel_win_title') : t('duel_lose_title');
+    const opponentId = myRole === 'creator' ? duel.opponent_id : duel.creator_id;
+    const opponentName = myRole === 'creator' ? duel.opponent_name : duel.creator_name;
+    const rematch = () => {
+      if (!opponentId) return;
+      setBusy(true);
+      inviteDuel(opponentId, opponentName || '').finally(() => setBusy(false));
+    };
     return withBack(
       <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center', gap: 16 }}>
         <Text style={{ fontSize: 48 }}>{duel.winner === 'draw' ? '🤝' : won ? '🏆' : '😔'}</Text>
@@ -286,9 +293,16 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
             {lastReward > 0 ? `+${lastReward} 💎` : `💎 ${rewardedToday}/${rewardedLimit} ${t('club_rewards_left')}`}
           </Text>
         )}
-        <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {opponentId && (
+            <Pressable disabled={busy} onPress={() => recordRoundPlayed(rematch)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: colors.border, borderRadius: 12, opacity: busy ? 0.6 : 1 }}>
+              <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>⚔️ {t('duel_rematch')}</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => recordRoundPlayed(clearFinished)} style={{ paddingVertical: 12, paddingHorizontal: 24, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('duel_new')}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
