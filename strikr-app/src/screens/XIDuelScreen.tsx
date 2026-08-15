@@ -3,7 +3,7 @@
 // (unlike Mode Liste's duel, which races simultaneously), so this has its
 // own hook (useXIDuel) and screen rather than reusing GroupGameScreen.
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
@@ -53,6 +53,7 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [rematching, setRematching] = useState(false);
+  const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
 
   const updateAnswer = (next: string) => {
     setAnswer(next);
@@ -333,12 +334,33 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>{myScore} — {otherScore}</Text>
-            <Pressable onPress={forfeit}>
+            <Pressable onPress={() => setForfeitConfirmOpen(true)}>
               <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>{t('duel_forfeit')}</Text>
             </Pressable>
           </View>
         </View>
       </View>
+
+      <Modal visible={forfeitConfirmOpen} transparent animationType="fade" onRequestClose={() => setForfeitConfirmOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center', padding: 24 }} onPress={() => setForfeitConfirmOpen(false)}>
+          <Pressable style={{ backgroundColor: colors.bg, borderWidth: 2.5, borderColor: accent.coral, borderRadius: 20, padding: 22, maxWidth: 340, width: '100%' }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink, marginBottom: 10 }}>{t('duel_forfeit_confirm_title')}</Text>
+            <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.ink, lineHeight: 19 }}>{t('duel_forfeit_confirm_body')}</Text>
+            <Pressable
+              onPress={() => {
+                setForfeitConfirmOpen(false);
+                forfeit();
+              }}
+              style={{ marginTop: 18, paddingVertical: 12, backgroundColor: accent.coral, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: '#fff' }}>{t('duel_forfeit_confirm_button')}</Text>
+            </Pressable>
+            <Pressable onPress={() => setForfeitConfirmOpen(false)} style={{ marginTop: 10, paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.muted }}>{t('settings_delete_account_cancel')}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 14 }} style={{ flex: 1 }}>
         <XIPitch

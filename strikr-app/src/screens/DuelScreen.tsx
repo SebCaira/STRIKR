@@ -55,6 +55,7 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
   const [answer, setAnswer] = useState('');
   const [cellError, setCellError] = useState<string | null>(null);
+  const [forfeitConfirmOpen, setForfeitConfirmOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
 
   const updateAnswer = (next: string) => {
@@ -328,11 +329,32 @@ export default function DuelScreen({ onBack, inviteUserId, inviteUserName, onInv
           <Pressable onPress={rules.show} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 999, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ fontFamily: fonts.displayBold, fontSize: 11, color: colors.ink }}>?</Text>
           </Pressable>
-          <Pressable onPress={forfeit}>
+          <Pressable onPress={() => setForfeitConfirmOpen(true)}>
             <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: colors.muted }}>{t('duel_forfeit')}</Text>
           </Pressable>
         </View>
       </View>
+
+      <Modal visible={forfeitConfirmOpen} transparent animationType="fade" onRequestClose={() => setForfeitConfirmOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center', padding: 24 }} onPress={() => setForfeitConfirmOpen(false)}>
+          <Pressable style={{ backgroundColor: colors.bg, borderWidth: 2.5, borderColor: accent.coral, borderRadius: 20, padding: 22, maxWidth: 340, width: '100%' }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink, marginBottom: 10 }}>{t('duel_forfeit_confirm_title')}</Text>
+            <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.ink, lineHeight: 19 }}>{t('duel_forfeit_confirm_body')}</Text>
+            <Pressable
+              onPress={() => {
+                setForfeitConfirmOpen(false);
+                forfeit();
+              }}
+              style={{ marginTop: 18, paddingVertical: 12, backgroundColor: accent.coral, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: '#fff' }}>{t('duel_forfeit_confirm_button')}</Text>
+            </Pressable>
+            <Pressable onPress={() => setForfeitConfirmOpen(false)} style={{ marginTop: 10, paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.muted }}>{t('settings_delete_account_cancel')}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <View style={{ padding: 20 }}>
         <View style={{ flexDirection: 'row' }}>
