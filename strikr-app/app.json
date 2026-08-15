@@ -44,14 +44,7 @@
         }
       ],
       "expo-asset",
-      "expo-notifications",
-      [
-        "react-native-google-mobile-ads",
-        {
-          "iosAppId": "ca-app-pub-7516626754240121~7782009402",
-          "androidAppId": "ca-app-pub-7516626754240121~7782009402"
-        }
-      ]
+      "expo-notifications"
     ],
     "owner": "cairasebastien",
     "privacy": "public",

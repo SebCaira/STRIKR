@@ -2,26 +2,23 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is wired in (see ACTIVATION.md), but OFF — for good reason now.
-// Six fixes tried (build 40/41/42/45, byte-for-byte identical crash every
-// time), see src/lib/ads.ts for the full history. Expo support correctly
-// ruled out the New Architecture theory (newArchEnabled is false, so that
-// code path was never running) and pointed at an ordinary uncaught JS
-// exception going through the legacy bridge's ExceptionsManager. Acting
-// on that, every single JS call in the ad-loading chain — SDK init, ad
-// creation, load, show, and all 3 call sites — was wrapped in try/catch
-// so the promise these functions return is structurally guaranteed to
-// never reject. Still crashed, byte-for-byte identical signature. With
-// every JS-reachable call guarded and the crash persisting regardless,
-// the exception can't be coming from this app's JS at all — it has to be
-// thrown natively, inside react-native-google-mobile-ads' own iOS code
-// or the AdMob SDK itself, at a point no JS try/catch can reach. That's
-// no longer something fixable from here; it needs either a fix from the
-// library maintainers or a different ad SDK (AppLovin MAX, blocked until
-// the app is live on the App Store). Every ADS_LIVE check below routes
-// to the pre-monetization "instant success" fallback (ShopScreen,
-// useInterstitialAd, useGameEngine's doubleReward) so players still get
-// their reward, just without an actual ad.
+// AdMob is gone (see ACTIVATION.md) — react-native-google-mobile-ads was
+// fully removed from the project. Short version of a long story: real ads
+// never got past "instant crash on device" on iOS across six separate
+// fixes (build 40/41/42/45, byte-for-byte identical crash every time —
+// full history was in src/lib/ads.ts's comments before this), and
+// separately its Android native code never even compiled under this app's
+// Old Architecture config. The documented, official way to exclude just
+// the Android side (react-native.config.js) turned out to be unreliable
+// with Expo's autolinking in practice. Rather than keep guessing at
+// increasingly invasive workarounds — each attempt costing a paid EAS
+// Build credit just to find out whether it worked — the library was
+// removed outright. It needs either a fix from the library maintainers
+// (or Expo's autolinking), or a different ad SDK (AppLovin MAX, blocked
+// until the app is live on the App Store) before this comes back. Every
+// ADS_LIVE check below routes to the pre-monetization "instant success"
+// fallback (ShopScreen, useInterstitialAd, useGameEngine's doubleReward)
+// so players still get their reward, just without an actual ad.
 export const ADS_LIVE = false;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
