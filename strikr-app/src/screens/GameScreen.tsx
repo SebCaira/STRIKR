@@ -8,7 +8,7 @@ import { useInterstitialAd } from '../game/useInterstitialAd';
 import { useStats } from '../state/stats';
 import { useAuth } from '../state/auth';
 import { supabase } from '../lib/supabase';
-import { GAME_WIN_XP, HINT_COSTS, Level, flagUrl, streakMultiplier } from '../game/engine';
+import { FORFEIT_COST, GAME_WIN_XP, HINT_COSTS, Level, flagUrl, streakMultiplier } from '../game/engine';
 import ClubShield from '../components/ClubShield';
 import PlayerPortrait from '../components/PlayerPortrait';
 import HardShadowBox from '../components/HardShadowBox';
@@ -30,6 +30,7 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
   const rules = useRulesModal('main');
   const [flashDiamonds, setFlashDiamonds] = useState(false);
   const [resultSnapshot, setResultSnapshot] = useState<{ player: NonNullable<typeof state.player>; solvedAt: number; level: Level; winStreak: number; reward: number; cardBonus: number; isNewCard: boolean; rewardCapped: boolean } | null>(null);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (state.status === 'idle') pickPlayer();
@@ -240,7 +241,13 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
         </View>
 
         <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
-          <Pressable onPress={skipOrForfeit} style={{ paddingVertical: 12, paddingHorizontal: 14, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}>
+          <Pressable
+            onPress={() => {
+              if (state.status === 'playing' && diamonds >= FORFEIT_COST) setSkipConfirmOpen(true);
+              else skipOrForfeit();
+            }}
+            style={{ paddingVertical: 12, paddingHorizontal: 14, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}
+          >
             <Text style={{ fontFamily: fonts.display, fontSize: 14, color: colors.ink }}>{state.status === 'playing' ? '↻ 30💎' : '↻'}</Text>
           </Pressable>
           <Pressable onPress={() => submit()} style={{ flex: 1, paddingVertical: 12, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}>
@@ -248,6 +255,27 @@ export default function GameScreen({ onBack }: { onBack?: () => void } = {}) {
           </Pressable>
         </View>
       </View>
+
+      <Modal visible={skipConfirmOpen} transparent animationType="fade" onRequestClose={() => setSkipConfirmOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center', padding: 24 }} onPress={() => setSkipConfirmOpen(false)}>
+          <Pressable style={{ backgroundColor: colors.bg, borderWidth: 2.5, borderColor: accent.coral, borderRadius: 20, padding: 22, maxWidth: 340, width: '100%' }}>
+            <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink, marginBottom: 10 }}>{t('game_skip_confirm_title')}</Text>
+            <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.ink, lineHeight: 19 }}>{t('game_skip_confirm_body')}</Text>
+            <Pressable
+              onPress={() => {
+                setSkipConfirmOpen(false);
+                skipOrForfeit();
+              }}
+              style={{ marginTop: 18, paddingVertical: 12, backgroundColor: accent.coral, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: '#fff' }}>{t('game_skip_confirm_button')}</Text>
+            </Pressable>
+            <Pressable onPress={() => setSkipConfirmOpen(false)} style={{ marginTop: 10, paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 12, color: colors.muted }}>{t('settings_delete_account_cancel')}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={state.status === 'won' && !!resultSnapshot} animationType="slide">
         {resultSnapshot && (
