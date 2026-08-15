@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Linking, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
@@ -16,6 +16,12 @@ import { requestNotificationPermission, scheduleDailyReminder, cancelDailyRemind
 import { friendlyError } from '../lib/errors';
 import { AVATAR_FRAMES } from '../data/avatarFrames';
 import AvatarFrame from '../components/AvatarFrame';
+
+// Same address already published in privacy-policy.md / terms-of-service.md
+// as the official developer contact — this button is just a shortcut to
+// it, not a new communication surface (opens the device's own Mail app,
+// nothing sent or stored in-app).
+const SUPPORT_EMAIL = 'caira.sebastien@gmail.com';
 
 function ToggleRow({ icon, label, value, onChange }: { icon: string; label: string; value: boolean; onChange: (v: boolean) => void }) {
   const { colors, accent } = useTheme();
@@ -557,7 +563,13 @@ export default function SettingsScreen() {
             <ScrollView style={{ maxHeight: 320 }}>
               <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.ink, lineHeight: 19 }}>{t('settings_help_body')}</Text>
             </ScrollView>
-            <Pressable onPress={() => setHelpOpen(false)} style={{ marginTop: 18, paddingVertical: 10, backgroundColor: accent.coral, borderRadius: 12, alignItems: 'center' }}>
+            <Pressable
+              onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('STRIKR - Support')}`)}
+              style={{ marginTop: 14, paddingVertical: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink }}>✉️ {t('settings_contact_button')}</Text>
+            </Pressable>
+            <Pressable onPress={() => setHelpOpen(false)} style={{ marginTop: 10, paddingVertical: 10, backgroundColor: accent.coral, borderRadius: 12, alignItems: 'center' }}>
               <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff' }}>{t('settings_help_close')}</Text>
             </Pressable>
           </View>
