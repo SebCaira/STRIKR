@@ -83,6 +83,24 @@ const RewardedAdEventType = GMA?.RewardedAdEventType;
 // catchable bug in our own JS, not an unfixable native/iOS 26 issue. See
 // the fix at showRewardedAd()/showInterstitialAd() below (in-flight guard
 // + try/catch around show()) for the concrete bug this most likely was.
+//
+// Root cause, step 6 (confirmed, Aug 2026) — found it, in this app's own
+// code, by reading react-native-google-mobile-ads' actual source: this
+// file used AdEventType.LOADED for the rewarded ad's LOADED listener, but
+// RewardedAd.addAdEventListener() explicitly throws for that ("use
+// RewardedAdEventType.LOADED instead") — so on every single rewarded-ad
+// attempt, that registration call threw immediately, before current.load()
+// ever ran. LOAD_TIMEOUT (below) had already been scheduled one line
+// earlier though, and setTimeout doesn't care that the function that
+// scheduled it threw right after — 15s later it fired regardless, called
+// finish(), which tried to invoke unsub* functions that were never
+// assigned because registration never completed. That uncaught throw, from
+// an orphaned native timer callback with nothing wrapping it, is what
+// actually aborted the app every time — 100% reproducible, independent of
+// ad units/library version/consent, matching everything observed. Fixed
+// below (RewardedAdEventType.LOADED); the registration block is now also
+// wrapped so a future mistake here fails safe instead of orphaning the
+// timeout again.
 const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
@@ -269,37 +287,64 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
         return;
       }
       let earned = false;
-      const timeout = setTimeout(() => finish(false), LOAD_TIMEOUT);
-      const unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-        try {
-          earned = true;
-        } catch (e) {
-          reportAdError('rewarded.EARNED_REWARD', e);
-        }
-      });
-      const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
-        try {
-          current.show();
-        } catch (e) {
-          reportAdError('rewarded.LOADED show()', e);
-          finish(false);
-        }
-      });
-      const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => {
-        try {
-          finish(earned);
-        } catch (e) {
-          reportAdError('rewarded.CLOSED finish()', e);
-        }
-      });
-      const unsubError = current.addAdEventListener(AdEventType.ERROR, (error: unknown) => {
-        reportAdError('rewarded.ERROR', error);
+      // The real bug behind every previous crash, found by actually reading
+      // this library's source: RewardedAd.addAdEventListener() throws
+      // synchronously if given AdEventType.LOADED instead of its own
+      // RewardedAdEventType.LOADED — a mistake this file made below for a
+      // long time. That throw happens *before* current.load() is ever
+      // reached, but LOAD_TIMEOUT was already scheduled one line above and
+      // keeps running regardless — 15s later it fires finish(), which tries
+      // to call unsub* functions that were never assigned, and *that*
+      // uncaught throw (from an orphaned native timer callback, outside any
+      // try/catch) is what actually crashed the app every single time.
+      // unsubEarned/Loaded/Closed/Error now default to no-ops and the whole
+      // registration block is guarded, so even a future mistake here can't
+      // orphan the timeout the same way again.
+      const timeout = setTimeout(() => {
         try {
           finish(false);
         } catch (e) {
-          reportAdError('rewarded.ERROR finish()', e);
+          reportAdError('rewarded.LOAD_TIMEOUT finish()', e);
         }
-      });
+      }, LOAD_TIMEOUT);
+      let unsubEarned = () => {};
+      let unsubLoaded = () => {};
+      let unsubClosed = () => {};
+      let unsubError = () => {};
+      try {
+        unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+          try {
+            earned = true;
+          } catch (e) {
+            reportAdError('rewarded.EARNED_REWARD', e);
+          }
+        });
+        unsubLoaded = current.addAdEventListener(RewardedAdEventType.LOADED, () => {
+          try {
+            current.show();
+          } catch (e) {
+            reportAdError('rewarded.LOADED show()', e);
+            finish(false);
+          }
+        });
+        unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => {
+          try {
+            finish(earned);
+          } catch (e) {
+            reportAdError('rewarded.CLOSED finish()', e);
+          }
+        });
+        unsubError = current.addAdEventListener(AdEventType.ERROR, (error: unknown) => {
+          reportAdError('rewarded.ERROR', error);
+          try {
+            finish(false);
+          } catch (e) {
+            reportAdError('rewarded.ERROR finish()', e);
+          }
+        });
+      } catch (e) {
+        reportAdError('rewarded.addAdEventListener', e);
+      }
       try {
         current.load();
       } catch (e) {
@@ -345,32 +390,49 @@ export async function showInterstitialAd(): Promise<void> {
         resolve();
         return;
       }
-      const timeout = setTimeout(finish, LOAD_TIMEOUT);
-      const unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
-        try {
-          current.show();
-        } catch (e) {
-          reportAdError('interstitial.LOADED show()', e);
-          finish();
-        }
-      });
-      const unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => {
+      // Same orphaned-timeout guard as showRewardedAd() above: if the
+      // registration block below ever throws, unsub* stay no-ops and
+      // finish() (called from this timeout in 15s regardless) can't crash
+      // trying to call an unassigned unsub function.
+      const timeout = setTimeout(() => {
         try {
           finish();
         } catch (e) {
-          reportAdError('interstitial.CLOSED finish()', e);
+          reportAdError('interstitial.LOAD_TIMEOUT finish()', e);
         }
-      });
-      // Failing to load a real ad shouldn't block the game — the round just
-      // continues without an interstitial that round.
-      const unsubError = current.addAdEventListener(AdEventType.ERROR, (error: unknown) => {
-        reportAdError('interstitial.ERROR', error);
-        try {
-          finish();
-        } catch (e) {
-          reportAdError('interstitial.ERROR finish()', e);
-        }
-      });
+      }, LOAD_TIMEOUT);
+      let unsubLoaded = () => {};
+      let unsubClosed = () => {};
+      let unsubError = () => {};
+      try {
+        unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+          try {
+            current.show();
+          } catch (e) {
+            reportAdError('interstitial.LOADED show()', e);
+            finish();
+          }
+        });
+        unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => {
+          try {
+            finish();
+          } catch (e) {
+            reportAdError('interstitial.CLOSED finish()', e);
+          }
+        });
+        // Failing to load a real ad shouldn't block the game — the round
+        // just continues without an interstitial that round.
+        unsubError = current.addAdEventListener(AdEventType.ERROR, (error: unknown) => {
+          reportAdError('interstitial.ERROR', error);
+          try {
+            finish();
+          } catch (e) {
+            reportAdError('interstitial.ERROR finish()', e);
+          }
+        });
+      } catch (e) {
+        reportAdError('interstitial.addAdEventListener', e);
+      }
       try {
         current.load();
       } catch (e) {
