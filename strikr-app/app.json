@@ -44,7 +44,8 @@
         }
       ],
       "expo-asset",
-      "expo-notifications"
+      "expo-notifications",
+      "react-native-google-mobile-ads"
     ],
     "owner": "cairasebastien",
     "privacy": "public",
