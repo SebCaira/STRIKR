@@ -2,24 +2,19 @@
 // registered on both App Store Connect and Google Play Console exactly —
 // react-native-iap requests products by this string (see src/lib/iap.ts).
 
-// AdMob is gone (see ACTIVATION.md) — react-native-google-mobile-ads was
-// fully removed from the project. Short version of a long story: real ads
-// never got past "instant crash on device" on iOS across six separate
-// fixes (build 40/41/42/45, byte-for-byte identical crash every time —
-// full history was in src/lib/ads.ts's comments before this), and
-// separately its Android native code never even compiled under this app's
-// Old Architecture config. The documented, official way to exclude just
-// the Android side (react-native.config.js) turned out to be unreliable
-// with Expo's autolinking in practice. Rather than keep guessing at
-// increasingly invasive workarounds — each attempt costing a paid EAS
-// Build credit just to find out whether it worked — the library was
-// removed outright. It needs either a fix from the library maintainers
-// (or Expo's autolinking), or a different ad SDK (AppLovin MAX, blocked
-// until the app is live on the App Store) before this comes back. Every
-// ADS_LIVE check below routes to the pre-monetization "instant success"
-// fallback (ShopScreen, useInterstitialAd, useGameEngine's doubleReward)
-// so players still get their reward, just without an actual ad.
-export const ADS_LIVE = false;
+// AdMob diagnostic round (Aug 2026) — react-native-google-mobile-ads is
+// back after Expo support (Sarah) traced the iOS crash to errors thrown
+// inside AdEventType listener callbacks, off the call stack of every
+// try/catch added in earlier rounds (full history in src/lib/ads.ts).
+// ads.ts now wraps each listener body in its own try/catch and reports
+// whatever it catches to Supabase (app_events, event_name
+// 'ad_error_diagnostic'/'js_global_error') so it's readable without a Mac.
+// ADS_LIVE is true so this path actually runs — per Sarah's own advice,
+// only via a TestFlight build, not a full production release. The
+// separate Android native-compile failure under this app's Old
+// Architecture config is untouched by any of this, so this round is
+// iOS-only: build/update with --platform ios, never android or all.
+export const ADS_LIVE = true;
 
 // Real purchases: Paid Apps Agreement signed, banking + tax info done on
 // both App Store Connect and AdMob, and the 4 IAP products exist there

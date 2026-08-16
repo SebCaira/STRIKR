@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { ensureAdsInitialized } from './src/lib/ads';
+import { installGlobalErrorHandler } from './src/lib/crashReporter';
 import { MONETIZATION_LIVE } from './src/data/shop';
 import { initIAP } from './src/lib/iap';
 import { logEvent } from './src/lib/analytics';
@@ -37,6 +38,9 @@ import LevelUpModal from './src/components/LevelUpModal';
 import DailyRewardModal from './src/components/DailyRewardModal';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+// Installed before ensureAdsInitialized() so it's in place for the very
+// first native callback that could possibly fire.
+installGlobalErrorHandler();
 // Kicks off the AdMob SDK init as early as possible, unconditional (not
 // gated on auth/session) — ads.ts itself awaits this same promise before
 // ever creating a RewardedAd/InterstitialAd instance, so by the time a
