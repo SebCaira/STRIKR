@@ -19,6 +19,15 @@ const PODIUM_SIZE: Record<number, { size: number; barH: number }> = {
   2: { size: 42, barH: 42 },
 };
 
+// Or / argent / bronze — the podium's whole point is to read as a ranking
+// at a glance, so the color has to track rank (1/2/3), not whichever
+// player happens to stand on it (avatarColor(id) did that before: two
+// random hash-based colors on a "podium" don't read as one at all). Reuses
+// existing accent tokens rather than adding new hardcoded colors.
+function podiumColor(rank: number, accent: { yellow: string; lightBlue: string; coral: string }): string {
+  return rank === 1 ? accent.yellow : rank === 2 ? accent.lightBlue : accent.coral;
+}
+
 // Every game that supports a 1v1 duel — kept in sync with JeuxScreen's
 // GAMES list (modes.duel === true there). XI Type is hidden the same way
 // JeuxScreen hides it: no point offering a game with no match data yet.
@@ -198,7 +207,7 @@ export default function FriendsScreen() {
               {podiumOrder.map((p, i) => {
                 const rank = i === 1 ? 1 : i === 0 ? 2 : 3;
                 const dims = PODIUM_SIZE[i === 1 ? 0 : i === 0 ? 1 : 2];
-                const bg = avatarColor(p.id);
+                const bg = podiumColor(rank, accent);
                 return (
                   <View key={p.id} style={{ flex: 1, alignItems: 'center', gap: 5 }}>
                     {rank === 1 && <Text style={{ fontSize: 20 }}>👑</Text>}
