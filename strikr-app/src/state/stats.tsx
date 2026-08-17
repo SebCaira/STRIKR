@@ -284,6 +284,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
             : priorFastest;
 
         const next: StatsData = {
+          ...prev,
           solves: kind === 'game' ? prev.solves + 1 : prev.solves,
           firstTryWins: firstTry ? prev.firstTryWins + 1 : prev.firstTryWins,
           totalWins: prev.totalWins + 1,
