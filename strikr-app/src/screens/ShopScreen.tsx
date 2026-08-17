@@ -67,7 +67,10 @@ export default function ShopScreen() {
     setAdError(false);
     // The count is persisted immediately (not after the ad finishes), so
     // leaving and re-entering the screen mid-ad can't be used to dodge the
-    // daily cap and double up the reward.
+    // daily cap and double up the reward. It's refunded below on failure
+    // (see there for why) — this still closes that gap, since the refund
+    // only happens once showRewardedAd() actually settles, and leaving the
+    // screen before that never lets it settle in the first place.
     setAdWatchedToday((prev) => {
       const next = prev + 1;
       AsyncStorage.setItem(AD_WATCHED_KEY, JSON.stringify({ date: todayStr(), count: next })).catch(() => {});
@@ -88,6 +91,17 @@ export default function ShopScreen() {
     }
     setAdWatching(false);
     if (!success) {
+      // A failure here means no ad was actually shown (no fill, load
+      // error, timeout) or the reward genuinely wasn't earned — either
+      // way the player got nothing, so this attempt shouldn't burn one of
+      // their 10 daily tries. Without this, a day with poor ad fill (e.g.
+      // before the app is publicly listed) silently exhausts the cap
+      // without a single real ad ever being seen.
+      setAdWatchedToday((prev) => {
+        const next = Math.max(0, prev - 1);
+        AsyncStorage.setItem(AD_WATCHED_KEY, JSON.stringify({ date: todayStr(), count: next })).catch(() => {});
+        return next;
+      });
       setAdError(true);
       return;
     }
