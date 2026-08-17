@@ -228,6 +228,15 @@ async function tryCandidates(candidates: string[]): Promise<string | null> {
   return results.find((r) => r) || null;
 }
 
+// Names where the live search below is known to match the wrong Wikidata
+// entity outright — e.g. "Palermo" resolving to the city/flag, "Midtjylland"
+// to the Danish region, "Brøndby" to a building — rather than just missing.
+// Verifying real replacement crests requires reaching Wikipedia/Wikimedia
+// Commons, which isn't reachable from every environment this code is
+// maintained from, so these are blocked from the live fallback entirely and
+// fall through to ClubShield's clean initials badge instead of a wrong logo.
+const NO_LIVE_LOOKUP = new Set(['Palermo', 'Midtjylland', 'Brøndby']);
+
 export async function getClubLogo(clubName: string): Promise<string | null> {
   if (!clubName) return null;
   const override = LOGO_OVERRIDES[clubName];
@@ -237,6 +246,7 @@ export async function getClubLogo(clubName: string): Promise<string | null> {
   // which occasionally matches the wrong entity and shows a wrong crest.
   const verified = CLUB_LOGOS[clubName];
   if (verified) return verified;
+  if (NO_LIVE_LOOKUP.has(clubName)) return null;
   const url = await wikidataImage(clubName, 'P154', 300);
   if (url) return url;
   return tryCandidates([clubName, clubName + ' F.C.', clubName + ' FC']);
