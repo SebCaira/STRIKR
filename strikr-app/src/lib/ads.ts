@@ -101,14 +101,15 @@ const RewardedAdEventType = GMA?.RewardedAdEventType;
 // below (RewardedAdEventType.LOADED); the registration block is now also
 // wrapped so a future mistake here fails safe instead of orphaning the
 // timeout again.
-// Temporarily true: real ad units are returning [googleMobileAds/no-fill]
-// (no crash — the fix above worked, this is just genuinely no inventory
-// yet, likely because the app isn't publicly listed on the App Store).
-// Google's test units are guaranteed to fill, so this confirms the rest of
-// the pipeline (consent, init, load, LOADED, show, EARNED_REWARD, CLOSED,
-// finish) actually works end to end. Flip back to false once confirmed —
-// or once the app is live and real fill improves.
-const USE_TEST_ADS = true;
+// Confirmed working end to end with Google's test units (consent, init,
+// load, LOADED, show, EARNED_REWARD, CLOSED, finish — no crash). Back to
+// real units: the crash was never tied to which ad unit was used (an
+// earlier diagnostic round already showed test units crashing identically,
+// which is what pointed away from AdMob and toward our own JS in the first
+// place), so this is safe. Real units currently no-fill until the app is
+// publicly listed — handled gracefully (round just continues without an
+// ad), not a bug.
+const USE_TEST_ADS = false;
 
 const REAL_AD_UNIT_IDS = {
   rewarded: 'ca-app-pub-7516626754240121/7450570987',
