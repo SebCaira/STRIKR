@@ -44,7 +44,7 @@ export default function FriendsScreen() {
   const { colors, accent, fonts } = useTheme();
   const { t } = useI18n();
   const { user } = useAuth();
-  const { friends, requests, loading, refresh, sendRequest, respondRequest } = useFriends();
+  const { friends, requests, loading, refresh, sendRequest, sendRequestById, respondRequest } = useFriends();
   const { rows: globalRows, myRank, loading: globalLoading, refresh: refreshGlobal } = useGlobalLeaderboard();
   const [tab, setTab] = useState<'friends' | 'global'>('friends');
   const insets = useSafeAreaInsets();
@@ -108,6 +108,19 @@ export default function FriendsScreen() {
     setRequestError(null);
     const { error } = await respondRequest(requestId, accept);
     if (error) setRequestError(t('error_generic'));
+  };
+
+  // Adding someone straight from the global leaderboard still goes through
+  // the same request/approval flow as the code-based Amis tab — this just
+  // skips typing a code, since the row's id is already on hand. Any outcome
+  // (sent, already friends, already pending) lands on the same checkmark:
+  // none of those need a further tap from here, only "Amis" shows the
+  // actual pending/accepted state.
+  const [globalRequestState, setGlobalRequestState] = useState<Record<string, 'sending' | 'done'>>({});
+  const handleAddFromGlobal = async (id: string) => {
+    setGlobalRequestState((s) => ({ ...s, [id]: 'sending' }));
+    await sendRequestById(id);
+    setGlobalRequestState((s) => ({ ...s, [id]: 'done' }));
   };
 
   const openModal = () => {
@@ -290,7 +303,22 @@ export default function FriendsScreen() {
                         <View style={{ paddingVertical: 5, paddingHorizontal: 9, backgroundColor: accent.coral, borderRadius: 999 }}>
                           <Text style={{ fontFamily: fonts.displayBold, fontSize: 9, color: '#fff' }}>{t('leaderboard_you_tag')}</Text>
                         </View>
-                      ) : null}
+                      ) : globalRequestState[r.id] === 'sending' ? (
+                        <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                          <ActivityIndicator size="small" color={colors.muted} />
+                        </View>
+                      ) : globalRequestState[r.id] === 'done' ? (
+                        <View style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: accent.mint, alignItems: 'center', justifyContent: 'center' }}>
+                          <Text style={{ fontSize: 13 }}>✓</Text>
+                        </View>
+                      ) : (
+                        <Pressable
+                          onPress={() => handleAddFromGlobal(r.id)}
+                          style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: accent.coral, alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Text style={{ fontFamily: fonts.displayBold, fontSize: 16, color: '#fff' }}>+</Text>
+                        </Pressable>
+                      )}
                     </View>
                   </View>
                 );

@@ -60,6 +60,19 @@ export function useFriends() {
     [refresh]
   );
 
+  // Same request/approval flow as sendRequest above, just keyed by user id
+  // instead of a referral code — for adding someone straight from the
+  // global leaderboard, where their id is already on hand but their code
+  // isn't shown.
+  const sendRequestById = useCallback(
+    async (targetId: string): Promise<{ error: string | null }> => {
+      const { error } = await supabase.rpc('send_friend_request_by_id', { target_id_arg: targetId });
+      if (!error) await refresh();
+      return { error: error ? error.message : null };
+    },
+    [refresh]
+  );
+
   const respondRequest = useCallback(
     async (requestId: string, accept: boolean): Promise<{ error: string | null }> => {
       const { error } = await supabase.rpc('respond_friend_request', { request_id: requestId, accept });
@@ -77,5 +90,5 @@ export function useFriends() {
     [refresh]
   );
 
-  return { friends, requests, loading, refresh, sendRequest, respondRequest, removeFriend };
+  return { friends, requests, loading, refresh, sendRequest, sendRequestById, respondRequest, removeFriend };
 }
