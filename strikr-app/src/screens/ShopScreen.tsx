@@ -32,6 +32,7 @@ export default function ShopScreen() {
   const [adWatching, setAdWatching] = useState(false);
   const [adError, setAdError] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
+  const [purchaseError, setPurchaseError] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(AD_WATCHED_KEY).then((raw) => {
@@ -49,12 +50,25 @@ export default function ShopScreen() {
     async (id: string, diamondsAmount: number) => {
       if (buying) return;
       setBuying(id);
-      const { success } = await purchasePackage(id);
+      setPurchaseError(false);
+      const { success, error } = await purchasePackage(id);
       setBuying(null);
-      if (!success) return;
+      if (!success) {
+        // A user-initiated cancel isn't an error — App Review flagged the
+        // opposite problem (a failed/hung purchase giving zero feedback at
+        // all), so every other outcome now surfaces something on screen
+        // instead of silently doing nothing.
+        if (error !== 'cancelled') setPurchaseError(true);
+        return;
+      }
       addDiamonds(diamondsAmount);
       logEvent(user?.id, 'shop_purchase', { package_id: id, diamonds: diamondsAmount });
-      setConfirmation({ text: t('shop_purchase_confirmed_prefix') + ' +' + diamondsAmount + ' 💎', simulated: true });
+      // MONETIZATION_LIVE means this was a real, actually-charged purchase —
+      // showing the "simulated purchase" note here (as this unconditionally
+      // did before) would tell a paying customer their money wasn't really
+      // taken.
+      const prefix = t(MONETIZATION_LIVE ? 'shop_purchase_confirmed_real_prefix' : 'shop_purchase_confirmed_prefix');
+      setConfirmation({ text: prefix + ' +' + diamondsAmount + ' 💎', simulated: !MONETIZATION_LIVE });
     },
     [addDiamonds, t, user, buying]
   );
@@ -171,7 +185,13 @@ export default function ShopScreen() {
               </Pressable>
             </HardShadowBox>
           ))
-        ) : (
+        ) : null}
+        {purchaseError && (
+          <Text style={{ fontFamily: fonts.body, fontSize: 11, color: colors.muted, textAlign: 'center' }}>
+            {t('shop_purchase_error')}
+          </Text>
+        )}
+        {!MONETIZATION_LIVE && (
           <View style={{ alignItems: 'center', padding: 24 }}>
             <Text style={{ fontSize: 32 }}>🚧</Text>
             <Text style={{ fontFamily: fonts.display, fontSize: 15, color: colors.ink, marginTop: 10, textAlign: 'center' }}>

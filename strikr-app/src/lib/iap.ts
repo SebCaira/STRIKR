@@ -23,6 +23,16 @@ import {
 
 let initialized = false;
 
+// Safety net: requestPurchase() only resolves once the *request* is sent,
+// not once a purchase actually completes — the real outcome only ever
+// arrives via purchaseUpdatedListener/purchaseErrorListener below. If
+// StoreKit/Play Billing never fires either one for any reason (seen during
+// App Review: "no action took place when we tried to purchase gems" — the
+// button just sat there forever with no feedback), this promise would
+// otherwise hang indefinitely, exactly like ads.ts's LOAD_TIMEOUT was added
+// to prevent for the same class of bug.
+const PURCHASE_TIMEOUT = 20000;
+
 // Called once at app startup (see App.tsx) — purchasePackage() also calls
 // this itself as a fallback so a purchase attempt still works even if
 // startup init silently failed (e.g. a transient StoreKit hiccup).
@@ -45,10 +55,12 @@ export async function purchasePackage(packageId: string): Promise<{ success: boo
     const finish = (result: { success: boolean; error?: string }) => {
       if (settled) return;
       settled = true;
+      clearTimeout(timeout);
       updateSub.remove();
       errorSub.remove();
       resolve(result);
     };
+    const timeout = setTimeout(() => finish({ success: false, error: 'timeout' }), PURCHASE_TIMEOUT);
 
     const updateSub = purchaseUpdatedListener(async (purchase: Purchase) => {
       if (purchase.productId !== packageId) return;
