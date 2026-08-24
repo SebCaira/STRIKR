@@ -328,6 +328,16 @@ export async function showRewardedAd(): Promise<{ success: boolean }> {
           }
         });
         unsubLoaded = current.addAdEventListener(RewardedAdEventType.LOADED, () => {
+          // LOAD_TIMEOUT exists to catch an ad that never loads — once it
+          // has loaded and is about to show, that's no longer a risk, but
+          // the timer kept running regardless (it was only ever cleared
+          // from inside finish()). A rewarded video commonly runs longer
+          // than LOAD_TIMEOUT's 15s, so the timeout would fire mid-playback
+          // and settle this as a failure — silently losing a reward the
+          // player was about to legitimately earn a moment later, since
+          // finish() is a no-op once already settled. Clearing it here,
+          // the instant the ad is confirmed loaded, closes that gap.
+          clearTimeout(timeout);
           try {
             current.show();
           } catch (e) {
@@ -414,6 +424,10 @@ export async function showInterstitialAd(): Promise<void> {
       let unsubError = () => {};
       try {
         unsubLoaded = current.addAdEventListener(AdEventType.LOADED, () => {
+          // Same reasoning as showRewardedAd() above: clear the load
+          // timeout the instant the ad is loaded, or it can fire mid-view
+          // and finish() the round early while the ad is still on screen.
+          clearTimeout(timeout);
           try {
             current.show();
           } catch (e) {
