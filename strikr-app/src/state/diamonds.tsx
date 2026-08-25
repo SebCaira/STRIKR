@@ -24,6 +24,15 @@ export function DiamondsProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const loadedForUser = useRef<string | null>(null);
 
+  // Retries instead of a single short timeout: right after an OTA update,
+  // the first launch on the new bundle does extra cold-start work (bundle
+  // verification, a fresh Metro/Hermes warmup, re-establishing the
+  // Supabase session) on top of the network round trip, so a one-shot
+  // fetch used to lose that race often enough to permanently fall back to
+  // DEFAULT_BALANCE for the rest of the session — displaying 200 while the
+  // real server balance (never touched, addDiamonds always writes via an
+  // atomic RPC) stayed correct underneath. Same fix already applied to the
+  // streak/XP load in stats.tsx.
   useEffect(() => {
     if (!user) {
       setReady(false);
@@ -31,36 +40,46 @@ export function DiamondsProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (loadedForUser.current === user.id) return;
-    let settled = false;
-    const timeout = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      setDiamonds(DEFAULT_BALANCE);
-      loadedForUser.current = user.id;
-      setReady(true);
-    }, 8000);
-    supabase
-      .from('profiles')
-      .select('diamonds')
-      .eq('id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        setDiamonds(data?.diamonds ?? DEFAULT_BALANCE);
-        loadedForUser.current = user.id;
-        setReady(true);
-      })
-      .catch(() => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timeout);
-        setDiamonds(DEFAULT_BALANCE);
-        loadedForUser.current = user.id;
-        setReady(true);
-      });
-    return () => clearTimeout(timeout);
+    let cancelled = false;
+    let attempt = 0;
+    const MAX_ATTEMPTS = 5;
+
+    const tryLoad = () => {
+      attempt += 1;
+      supabase
+        .from('profiles')
+        .select('diamonds')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          // A request can resolve without throwing (so .catch() below never
+          // fires) yet still carry an `error` — e.g. the Supabase session
+          // isn't fully re-established yet right after an OTA cold start.
+          // Treat that exactly like a network failure (retry) instead of
+          // silently accepting `data: undefined` as "loaded successfully".
+          if (error) throw error;
+          setDiamonds(data?.diamonds ?? DEFAULT_BALANCE);
+          loadedForUser.current = user.id;
+          setReady(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          if (attempt < MAX_ATTEMPTS) {
+            setTimeout(tryLoad, 3000);
+            return;
+          }
+          // Genuinely can't reach the server after several tries — let the
+          // player use the app with the default for this session.
+          setDiamonds(DEFAULT_BALANCE);
+          loadedForUser.current = user.id;
+          setReady(true);
+        });
+    };
+    tryLoad();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const addDiamonds = useCallback(
