@@ -231,11 +231,10 @@ export default function FriendsScreen() {
                 const rank = i === 1 ? 1 : i === 0 ? 2 : 3;
                 const dims = PODIUM_SIZE[i === 1 ? 0 : i === 0 ? 1 : 2];
                 const bg = podiumColor(rank, accent);
-                const Wrapper = tab === 'global' ? Pressable : View;
                 return (
-                  <Wrapper
+                  <Pressable
                     key={p.id}
-                    onPress={tab === 'global' ? () => navigation.getParent()?.navigate('PublicProfile', { userId: p.id }) : undefined}
+                    onPress={() => navigation.getParent()?.navigate('PublicProfile', { userId: p.id })}
                     style={{ flex: 1, alignItems: 'center', gap: 5 }}
                   >
                     {rank === 1 && <Text style={{ fontSize: 20 }}>👑</Text>}
@@ -267,7 +266,7 @@ export default function FriendsScreen() {
                       <Text style={{ fontFamily: fonts.display, fontSize: rank === 1 ? 28 : 20, color: '#1a1a1a' }}>{rank}</Text>
                       <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: '#1a1a1a' }}>{p.xp} XP</Text>
                     </View>
-                  </Wrapper>
+                  </Pressable>
                 );
               })}
             </View>
@@ -288,7 +287,6 @@ export default function FriendsScreen() {
                 return (
                   <View key={r.id} style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: isYou ? accent.coral : colors.border, borderRadius: 12 }}>
                     <Pressable
-                      disabled={tab !== 'global'}
                       onPress={() => navigation.getParent()?.navigate('PublicProfile', { userId: r.id })}
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8 }}
                     >
