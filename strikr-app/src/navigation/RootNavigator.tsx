@@ -12,6 +12,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ShopScreen from '../screens/ShopScreen';
 import MissionsScreen from '../screens/MissionsScreen';
 import CollectionScreen from '../screens/CollectionScreen';
+import PublicProfileScreen from '../screens/PublicProfileScreen';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   Shop: undefined;
   Missions: undefined;
   Collection: undefined;
+  PublicProfile: { userId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -111,6 +113,7 @@ export default function RootNavigator() {
         <Stack.Screen name="Shop" component={ShopScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Missions" component={MissionsScreen} options={{ presentation: 'card' }} />
         <Stack.Screen name="Collection" component={CollectionScreen} options={{ presentation: 'card' }} />
+        <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ presentation: 'card' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -122,7 +122,7 @@ function daysBetween(a: string, b: string): number {
   return Math.round(ms / 86400000);
 }
 
-function levelForXp(xp: number): { level: number; progress: number; xpIntoLevel: number; xpForNext: number } {
+export function levelForXp(xp: number): { level: number; progress: number; xpIntoLevel: number; xpForNext: number } {
   let level = 1;
   let remaining = xp;
   let needed = LEVEL_STEP;
