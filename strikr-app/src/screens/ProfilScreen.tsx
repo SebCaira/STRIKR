@@ -10,6 +10,7 @@ import { useAuth } from '../state/auth';
 import { useFriends } from '../state/friends';
 import { useGameHistory } from '../state/appStats';
 import { useAvatar } from '../state/avatar';
+import { useWatchAdForDiamonds } from '../game/useWatchAdForDiamonds';
 import { pickAndUploadAvatar } from '../lib/avatarUpload';
 import { BADGES } from '../lib/badges';
 import AvatarFrame from '../components/AvatarFrame';
@@ -32,6 +33,8 @@ export default function ProfilScreen() {
   const { diamonds } = useDiamonds();
   const { stats, derived, buyStreakFreeze } = useStats();
   const [freezeMessage, setFreezeMessage] = useState<string | null>(null);
+  const [freezeNotEnough, setFreezeNotEnough] = useState(false);
+  const { ready: adReady, watching: adWatching, watch: watchAd } = useWatchAdForDiamonds();
   const { user } = useAuth();
   const { friends, refresh: refreshFriends } = useFriends();
   const { history, refresh: refreshHistory } = useGameHistory(5);
@@ -164,7 +167,9 @@ export default function ProfilScreen() {
           <Pressable
             onPress={() => {
               const { error } = buyStreakFreeze();
-              setFreezeMessage(error === 'not_enough_diamonds' ? t('profil_freeze_not_enough') : t('profil_freeze_bought'));
+              const notEnough = error === 'not_enough_diamonds';
+              setFreezeNotEnough(notEnough);
+              setFreezeMessage(notEnough ? t('profil_freeze_not_enough') : t('profil_freeze_bought'));
             }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12 }}
           >
@@ -177,7 +182,28 @@ export default function ProfilScreen() {
               <Text style={{ fontFamily: fonts.mono, fontSize: 10, color: '#1a1a1a' }}>💎{STREAK_FREEZE_COST}</Text>
             </View>
           </Pressable>
-          {freezeMessage && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 10, color: colors.muted, marginTop: 4 }}>{freezeMessage}</Text>}
+          {freezeMessage && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 10, color: colors.muted }}>{freezeMessage}</Text>
+              {freezeNotEnough && adReady && (
+                <Pressable
+                  disabled={adWatching}
+                  onPress={async () => {
+                    const { success } = await watchAd();
+                    if (success) {
+                      setFreezeNotEnough(false);
+                      setFreezeMessage(t('shop_ad_confirmed_prefix') + ' +15 💎');
+                    }
+                  }}
+                  style={{ paddingVertical: 3, paddingHorizontal: 8, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999, opacity: adWatching ? 0.6 : 1 }}
+                >
+                  <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: '#1a1a1a' }}>
+                    {adWatching ? t('shop_ad_loading') : `📺 ${t('shop_ad_title')}`}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 14 }}>

@@ -5,6 +5,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
+import { useDiamonds } from '../state/diamonds';
 import { useFriends, FriendRow } from '../state/friends';
 import { useGlobalLeaderboard, LeaderboardRow } from '../state/leaderboard';
 import { useAuth } from '../state/auth';
@@ -45,6 +46,7 @@ export default function FriendsScreen() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { friends, requests, loading, refresh, sendRequest, sendRequestById, respondRequest } = useFriends();
+  const { diamonds } = useDiamonds();
   const { rows: globalRows, myRank, loading: globalLoading, refresh: refreshGlobal } = useGlobalLeaderboard();
   const [tab, setTab] = useState<'friends' | 'global'>('friends');
   const insets = useSafeAreaInsets();
@@ -162,9 +164,17 @@ export default function FriendsScreen() {
           </Text>
           <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('friends_subtitle')}</Text>
         </View>
-        <Pressable onPress={openModal} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: fonts.displayBold, fontSize: 16, color: '#fff' }}>+</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={() => navigation.getParent()?.navigate('Shop')}
+            style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: accent.mint, borderWidth: 2, borderColor: colors.border, borderRadius: 999 }}
+          >
+            <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: '#1a1a1a' }}>💎 {diamonds}</Text>
+          </Pressable>
+          <Pressable onPress={openModal} style={{ width: 34, height: 34, borderRadius: 999, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: fonts.displayBold, fontSize: 16, color: '#fff' }}>+</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={{ marginTop: 14, marginHorizontal: 20, flexDirection: 'row', backgroundColor: colors.track, borderWidth: 2, borderColor: colors.border, borderRadius: 999, padding: 3, alignSelf: 'flex-start' }}>

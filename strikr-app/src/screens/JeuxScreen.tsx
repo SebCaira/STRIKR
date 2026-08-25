@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
+import { useDiamonds } from '../state/diamonds';
 import { TabParamList } from '../navigation/TabNavigator';
 import GameScreen from './GameScreen';
 import DuelScreen from './DuelScreen';
@@ -55,6 +56,7 @@ export default function JeuxScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<TabParamList, 'Jeux'>>();
+  const { diamonds } = useDiamonds();
 
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
   const [selectedMode, setSelectedMode] = useState<ModeId | null>(null);
@@ -210,8 +212,18 @@ export default function JeuxScreen() {
   // Hub: pick a game.
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14, paddingHorizontal: 20 }}>
-      <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink, letterSpacing: -0.5 }}>{t('jeux_title')}</Text>
-      <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('jeux_subtitle')}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: 26, color: colors.ink, letterSpacing: -0.5 }}>{t('jeux_title')}</Text>
+          <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('jeux_subtitle')}</Text>
+        </View>
+        <Pressable
+          onPress={() => navigation.getParent()?.navigate('Shop')}
+          style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: accent.mint, borderWidth: 2, borderColor: colors.border, borderRadius: 999 }}
+        >
+          <Text style={{ fontFamily: fonts.displayBold, fontSize: 10, color: '#1a1a1a' }}>💎 {diamonds}</Text>
+        </Pressable>
+      </View>
       <View style={{ marginTop: 20, gap: 12 }}>
         {GAMES.map((game) => (
           <Pressable

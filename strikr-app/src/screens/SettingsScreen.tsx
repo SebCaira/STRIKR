@@ -15,6 +15,7 @@ import { isPlaceholderEmail } from '../lib/username';
 import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, registerPushToken, clearPushToken } from '../lib/notifications';
 import { friendlyError } from '../lib/errors';
 import { AVATAR_FRAMES } from '../data/avatarFrames';
+import { useWatchAdForDiamonds } from '../game/useWatchAdForDiamonds';
 import AvatarFrame from '../components/AvatarFrame';
 
 // Same address already published in privacy-policy.md / terms-of-service.md
@@ -47,6 +48,8 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { avatarUrl, ownedFrames, equippedFrame, buyFrame, equipFrame } = useAvatar();
   const [frameMessage, setFrameMessage] = useState<string | null>(null);
+  const [frameNotEnough, setFrameNotEnough] = useState(false);
+  const { ready: adReady, watching: adWatching, watch: watchAd } = useWatchAdForDiamonds();
   const { syncLocalDelta } = useDiamonds();
   const { derived } = useStats();
   const insets = useSafeAreaInsets();
@@ -256,15 +259,20 @@ export default function SettingsScreen() {
                         return;
                       }
                       if (f.milestoneOnly) {
+                        setFrameNotEnough(false);
                         setFrameMessage(t('settings_frames_milestone_locked'));
                         return;
                       }
                       if (f.unlockLevel !== undefined) {
+                        setFrameNotEnough(false);
                         setFrameMessage(t('settings_frames_level_locked_prefix') + ' ' + f.unlockLevel);
                         return;
                       }
                       const { error } = buyFrame(f.id);
-                      if (error === 'not_enough_diamonds') setFrameMessage(t('settings_frames_not_enough'));
+                      const notEnough = error === 'not_enough_diamonds';
+                      setFrameNotEnough(notEnough);
+                      if (notEnough) setFrameMessage(t('settings_frames_not_enough'));
+                      else setFrameMessage(null);
                     }}
                     style={{ alignItems: 'center', gap: 4 }}
                   >
@@ -286,7 +294,28 @@ export default function SettingsScreen() {
                 );
               })}
             </ScrollView>
-            {frameMessage && <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: colors.muted }}>{frameMessage}</Text>}
+            {frameMessage && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text style={{ fontFamily: fonts.bodySemibold, fontSize: 11, color: colors.muted }}>{frameMessage}</Text>
+                {frameNotEnough && adReady && (
+                  <Pressable
+                    disabled={adWatching}
+                    onPress={async () => {
+                      const { success } = await watchAd();
+                      if (success) {
+                        setFrameNotEnough(false);
+                        setFrameMessage(t('shop_ad_confirmed_prefix') + ' +15 💎');
+                      }
+                    }}
+                    style={{ paddingVertical: 3, paddingHorizontal: 8, backgroundColor: accent.mint, borderWidth: 1.5, borderColor: colors.border, borderRadius: 999, opacity: adWatching ? 0.6 : 1 }}
+                  >
+                    <Text style={{ fontFamily: fonts.mono, fontSize: 9, color: '#1a1a1a' }}>
+                      {adWatching ? t('shop_ad_loading') : `📺 ${t('shop_ad_title')}`}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
           </View>
 
           <View style={{ marginTop: 6, padding: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, gap: 8 }}>
