@@ -71,7 +71,7 @@ export function clubInit(name: string): string {
 // diamonds. Generous on purpose — it's the core loop, not a side mode like
 // Duel Solo — but a ceiling all the same. Wins past it still count for
 // XP/streak/missions, just without a diamond payout.
-export const GAME_REWARDED_WINS_PER_DAY = 10;
+export const GAME_REWARDED_WINS_PER_DAY = 20;
 
 export const HINT_COSTS = { nat: 30, pos: 20, age: 30 };
 // Wordle-style letter hints (used by the Daily challenge): a "present" letter

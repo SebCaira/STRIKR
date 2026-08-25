@@ -75,6 +75,16 @@ export default function JeuxScreen() {
       setSelectedGame(requestedGame && GAMES.some((g) => g.id === requestedGame) ? requestedGame : 'grille');
       setSelectedMode('duel');
       navigation.setParams({ mode: undefined, game: undefined, inviteUserId: undefined, inviteUserName: undefined });
+    } else if (route.params?.mode === 'group') {
+      // Tapping a group-game invite push (see RootNavigator) — the game
+      // type was already resolved from the invited row before navigating
+      // here, so this only needs to land on the right screen; useGroupGame()
+      // auto-loads this user's pending invite on mount regardless of which
+      // gameType prop the screen below was given.
+      const requestedGame = route.params.game as GameId | undefined;
+      setSelectedGame(requestedGame && GAMES.some((g) => g.id === requestedGame) ? requestedGame : 'main');
+      setSelectedMode('group');
+      navigation.setParams({ mode: undefined, game: undefined });
     }
   }, [route.params?.mode, route.params?.game, route.params?.inviteUserId, route.params?.inviteUserName, navigation]);
 

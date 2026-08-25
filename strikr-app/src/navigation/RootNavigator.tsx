@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
+import { supabase } from '../lib/supabase';
+import { XI_MATCHES } from '../data/xiMatches';
 import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import DailyScreen from '../screens/DailyScreen';
@@ -26,14 +28,48 @@ const ONBOARDING_KEY = 'strikr_onboarding_seen_v1';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-// Tapping a duel-invite push notification (foreground, backgrounded, or
-// cold-launch) jumps straight to the Grille duel screen — useDuel() already
-// loads the invitee's most recent pending invite on mount, so no duel id
-// needs to travel through the deep link.
-function openDuelInviteFromNotification(data: unknown) {
-  if (!(data as any)?.type || (data as any).type !== 'duel_invite') return;
-  if (!navigationRef.isReady()) return;
-  navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'duel' } } as never);
+// Tapping any of the 5 invite/social push notification types (foreground,
+// backgrounded, or cold-launch) routes to the relevant screen. For
+// duel_invite/xi_duel_invite, useDuel()/useXIDuel() already load the
+// invitee's most recent pending invite on mount, so no id needs to travel
+// through the deep link — same for group_invite via useGroupGame(), except
+// there the actual game TYPE (main/club/liste/grille, or the 'xi' variant of
+// liste) has to be resolved first so JeuxScreen renders the right screen
+// under it, since GroupGameScreen's rendering keys off the `gameType` prop
+// it's given, not off the loaded row.
+async function openInviteFromNotification(data: unknown) {
+  const type = (data as any)?.type;
+  if (!type) return;
+
+  if (type === 'duel_invite') {
+    if (!navigationRef.isReady()) return;
+    navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'duel' } } as never);
+    return;
+  }
+  if (type === 'xi_duel_invite') {
+    if (!navigationRef.isReady()) return;
+    navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'duel', game: 'xi' } } as never);
+    return;
+  }
+  if (type === 'friend_request' || type === 'friend_request_accepted') {
+    if (!navigationRef.isReady()) return;
+    navigationRef.navigate('Tabs' as never, { screen: 'Friends' } as never);
+    return;
+  }
+  if (type === 'group_invite') {
+    const gameId = (data as any)?.game_id;
+    let game = 'main';
+    if (gameId) {
+      const { data: row } = await supabase.from('group_games').select('game_type, list_id').eq('id', gameId).maybeSingle();
+      if (row?.game_type === 'liste' && row.list_id && XI_MATCHES.some((m) => m.id === row.list_id)) {
+        game = 'xi';
+      } else if (row?.game_type) {
+        game = row.game_type;
+      }
+    }
+    if (!navigationRef.isReady()) return;
+    navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'group', game } } as never);
+  }
 }
 
 export default function RootNavigator() {
@@ -49,7 +85,7 @@ export default function RootNavigator() {
 
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      openDuelInviteFromNotification(response.notification.request.content.data);
+      openInviteFromNotification(response.notification.request.content.data);
     });
     return () => sub.remove();
   }, []);
@@ -59,7 +95,7 @@ export default function RootNavigator() {
   // this checks it in onReady rather than racing it against `checked` above.
   const onNavigationReady = () => {
     Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response) openDuelInviteFromNotification(response.notification.request.content.data);
+      if (response) openInviteFromNotification(response.notification.request.content.data);
     });
   };
 
