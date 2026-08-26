@@ -485,6 +485,53 @@ export default function GroupGameScreen({
     );
   }
 
+  // No active game, 1-on-1, arrived directly from the Jeux hub (not via
+  // FriendsScreen's "Défier" button, which already auto-invites above via
+  // inviteUserId): tapping a friend fires the challenge immediately,
+  // skipping the multi-step "create a room" flow below (duration picker +
+  // separate "create" tap) that variant==='group' still needs — matching
+  // the same one-tap feel Grille/XI Type's own duel screens already have.
+  if (!game && variant === 'duel') {
+    const challenge = async (id: string, name: string) => {
+      if (busy) return;
+      setBusy(true);
+      setCreateError(null);
+      const { error } = await createGroup([id], [name], roundSeconds, gameType);
+      if (error) setCreateError(t('error_generic'));
+      setBusy(false);
+    };
+    return withBack(
+      <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 60, paddingHorizontal: 20 }}>
+        <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.ink }}>{t('duel_create')}</Text>
+        <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 4 }}>{t('duel_challenge_pick_sub')}</Text>
+        {createError && (
+          <Text style={{ fontFamily: fonts.body, fontSize: 12, color: colors.muted, marginTop: 12, textAlign: 'center' }}>{createError}</Text>
+        )}
+        {!friends.length && !friendsLoading ? (
+          <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.muted, marginTop: 24 }}>{t('group_no_friends')}</Text>
+        ) : (
+          <ScrollView style={{ marginTop: 20, maxHeight: 420 }}>
+            {friends.map((f) => (
+              <Pressable
+                key={f.id}
+                disabled={busy}
+                onPress={() => challenge(f.id, f.display_name)}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 12,
+                  backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, borderRadius: 12, marginBottom: 6, opacity: busy ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ fontFamily: fonts.displayBold, fontSize: 13, color: colors.ink, flex: 1 }}>{f.display_name}</Text>
+                {busy ? <ActivityIndicator size="small" color={colors.ink} /> : <Text style={{ fontSize: 16 }}>⚔️</Text>}
+              </Pressable>
+            ))}
+            {!friends.length && friendsLoading && <ActivityIndicator color={colors.ink} style={{ marginTop: 10 }} />}
+          </ScrollView>
+        )}
+      </View>
+    );
+  }
+
   // No active game: create a lobby (Groupe, up to 4 friends).
   if (!game) {
     return withBack(
