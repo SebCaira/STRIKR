@@ -320,7 +320,7 @@ export default function XIDuelScreen({ onBack, inviteUserId, inviteUserName, onI
   const foundByIndex = new Map(duel.found.map((f) => [f.index, f]));
 
   return withBack(
-    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 54 }}>
       <View style={{ paddingHorizontal: 20 }}>
         <Text style={{ fontFamily: fonts.display, fontSize: 16, color: colors.ink }} numberOfLines={2}>{duel.match_title}</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
