@@ -1,23 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../theme/ThemeContext';
 import { useI18n } from '../i18n/i18n';
 import { useDiamonds } from '../state/diamonds';
 import { useAuth } from '../state/auth';
+import { useAdBudget } from '../state/adBudget';
 import { SHOP_PACKAGES, REWARDED_AD_DIAMONDS, REWARDED_AD_PER_DAY, ADS_LIVE, MONETIZATION_LIVE } from '../data/shop';
 import HardShadowBox from '../components/HardShadowBox';
 import { logEvent } from '../lib/analytics';
-import { showRewardedAd } from '../lib/ads';
 import { purchasePackage } from '../lib/iap';
-
-const AD_WATCHED_KEY = 'strikr_ad_watched_v1';
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 export default function ShopScreen() {
   const { colors, accent, fonts } = useTheme();
@@ -26,25 +19,12 @@ export default function ShopScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { watchedToday: adWatchedToday, ready: adReady, watching: adWatching, watch: watchAdBudget } = useAdBudget();
 
   const [confirmation, setConfirmation] = useState<{ text: string; simulated: boolean } | null>(null);
-  const [adWatchedToday, setAdWatchedToday] = useState(0);
-  const [adWatching, setAdWatching] = useState(false);
   const [adError, setAdError] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(AD_WATCHED_KEY).then((raw) => {
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed.date === todayStr()) setAdWatchedToday(parsed.count || 0);
-      } catch {
-        // ignore corrupt storage
-      }
-    });
-  }, []);
 
   const buyPackage = useCallback(
     async (id: string, diamondsAmount: number) => {
@@ -73,55 +53,20 @@ export default function ShopScreen() {
     [addDiamonds, t, user, buying]
   );
 
-  const adReady = adWatchedToday < REWARDED_AD_PER_DAY;
-
+  // Daily-cap tracking, the actual showRewardedAd() call, and the
+  // increment/refund dance all live in useAdBudget() now (see
+  // src/state/adBudget.tsx) — shared with the Profil/Settings "regarder une
+  // pub" offers, so there's exactly one place counting today's watches
+  // instead of two independent copies that could drift apart.
   const watchAd = useCallback(async () => {
-    if (!adReady || adWatching) return;
-    setAdWatching(true);
     setAdError(false);
-    // The count is persisted immediately (not after the ad finishes), so
-    // leaving and re-entering the screen mid-ad can't be used to dodge the
-    // daily cap and double up the reward. It's refunded below on failure
-    // (see there for why) — this still closes that gap, since the refund
-    // only happens once showRewardedAd() actually settles, and leaving the
-    // screen before that never lets it settle in the first place.
-    setAdWatchedToday((prev) => {
-      const next = prev + 1;
-      AsyncStorage.setItem(AD_WATCHED_KEY, JSON.stringify({ date: todayStr(), count: next })).catch(() => {});
-      return next;
-    });
-    // ads.ts's showRewardedAd() is designed to always resolve, never
-    // reject, but this is the kind of code path that's already crashed
-    // the app 5 times over — a try/catch here costs nothing and means a
-    // regression there fails the ad request instead of the whole app.
-    let success = true;
-    if (ADS_LIVE) {
-      try {
-        ({ success } = await showRewardedAd());
-      } catch (e) {
-        console.warn('showRewardedAd() rejected', e);
-        success = false;
-      }
-    }
-    setAdWatching(false);
+    const { success } = await watchAdBudget();
     if (!success) {
-      // A failure here means no ad was actually shown (no fill, load
-      // error, timeout) or the reward genuinely wasn't earned — either
-      // way the player got nothing, so this attempt shouldn't burn one of
-      // their 10 daily tries. Without this, a day with poor ad fill (e.g.
-      // before the app is publicly listed) silently exhausts the cap
-      // without a single real ad ever being seen.
-      setAdWatchedToday((prev) => {
-        const next = Math.max(0, prev - 1);
-        AsyncStorage.setItem(AD_WATCHED_KEY, JSON.stringify({ date: todayStr(), count: next })).catch(() => {});
-        return next;
-      });
       setAdError(true);
       return;
     }
-    addDiamonds(REWARDED_AD_DIAMONDS);
     setConfirmation({ text: t('shop_ad_confirmed_prefix') + ' +' + REWARDED_AD_DIAMONDS + ' 💎', simulated: !ADS_LIVE });
-  }, [adReady, adWatching, addDiamonds, t]);
+  }, [watchAdBudget, t]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top + 14 }}>

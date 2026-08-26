@@ -6,6 +6,7 @@ import type {
   AdsConsentStatus as AdsConsentStatusT,
   InterstitialAd as InterstitialAdT,
   RewardedAd as RewardedAdT,
+  RewardedInterstitialAd as RewardedInterstitialAdT,
 } from 'react-native-google-mobile-ads';
 import { supabase } from './supabase';
 
@@ -30,6 +31,7 @@ const AdsConsentStatus = GMA?.AdsConsentStatus as typeof AdsConsentStatusT | und
 const InterstitialAd = GMA?.InterstitialAd;
 const RewardedAd = GMA?.RewardedAd;
 const RewardedAdEventType = GMA?.RewardedAdEventType;
+const RewardedInterstitialAd = GMA?.RewardedInterstitialAd;
 
 // Diagnostic conclusion from an earlier round: swapping to Google's own
 // test ad units made no difference — the crash reproduced identically —
@@ -114,6 +116,7 @@ const USE_TEST_ADS = false;
 const REAL_AD_UNIT_IDS = {
   rewarded: 'ca-app-pub-7516626754240121/7450570987',
   interstitial: 'ca-app-pub-7516626754240121/2333975671',
+  rewardedInterstitial: 'ca-app-pub-7516626754240121/5647175354',
 };
 
 // Google's official, permanent test ad units — same for every developer,
@@ -121,6 +124,7 @@ const REAL_AD_UNIT_IDS = {
 const TEST_AD_UNIT_IDS = {
   rewarded: 'ca-app-pub-3940256099942544/1712485313',
   interstitial: 'ca-app-pub-3940256099942544/4411468910',
+  rewardedInterstitial: 'ca-app-pub-3940256099942544/6978759866',
 };
 
 export const AD_UNIT_IDS = USE_TEST_ADS ? TEST_AD_UNIT_IDS : REAL_AD_UNIT_IDS;
@@ -211,6 +215,7 @@ export function ensureAdsInitialized() {
 // created after every show() to have the next ad ready to load.
 let rewarded: RewardedAdT | null = null;
 let interstitial: InterstitialAdT | null = null;
+let rewardedInterstitial: RewardedInterstitialAdT | null = null;
 
 // Root cause, step 5 (Expo support, Aug 2026): steps 1-4 above chased the
 // wrong layer entirely — newArchEnabled is false in app.json, so the
@@ -240,6 +245,7 @@ let interstitial: InterstitialAdT | null = null;
 // the app's own stated philosophy — instead of taking the whole app down.
 let rewardedInFlight = false;
 let interstitialInFlight = false;
+let rewardedInterstitialInFlight = false;
 
 function freshRewarded(): RewardedAdT {
   rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.rewarded);
@@ -249,6 +255,11 @@ function freshRewarded(): RewardedAdT {
 function freshInterstitial(): InterstitialAdT {
   interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.interstitial);
   return interstitial;
+}
+
+function freshRewardedInterstitial(): RewardedInterstitialAdT {
+  rewardedInterstitial = RewardedInterstitialAd.createForAdRequest(AD_UNIT_IDS.rewardedInterstitial);
+  return rewardedInterstitial;
 }
 
 // The first attempt at this fix only wrapped show() in try/catch, and
@@ -465,5 +476,107 @@ export async function showInterstitialAd(): Promise<void> {
   } catch (e) {
     console.warn('showInterstitialAd() failed', e);
     interstitialInFlight = false;
+  }
+}
+
+// Shown at the same "every 5 rounds" checkpoint the old forced interstitial
+// used (see useInterstitialAd.ts / RewardedInterstitialModal.tsx) — the
+// player is offered a reward for watching instead of being forced through
+// an ad with nothing in return, and can decline and continue for free.
+// Same shape and same lessons already learned from showRewardedAd() above:
+// RewardedAdEventType.LOADED (not AdEventType.LOADED, which this ad type
+// also throws for), the load timeout cleared the instant the ad loads (or
+// it can fire mid-view and lose an otherwise-earned reward), and every
+// listener registration guarded so a mistake here fails safe.
+export async function showRewardedInterstitialAd(): Promise<{ success: boolean }> {
+  if (rewardedInterstitialInFlight) return { success: false };
+  rewardedInterstitialInFlight = true;
+  try {
+    await ensureAdsInitialized();
+    return await new Promise<{ success: boolean }>((resolve) => {
+      let settled = false;
+      const finish = (success: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        unsubEarned();
+        unsubLoaded();
+        unsubClosed();
+        unsubError();
+        try {
+          freshRewardedInterstitial();
+        } catch (e) {
+          console.warn('freshRewardedInterstitial() threw', e);
+        }
+        rewardedInterstitialInFlight = false;
+        resolve({ success });
+      };
+      let current: RewardedInterstitialAdT;
+      try {
+        current = rewardedInterstitial || freshRewardedInterstitial();
+      } catch (e) {
+        console.warn('RewardedInterstitialAd.createForAdRequest() threw', e);
+        rewardedInterstitialInFlight = false;
+        resolve({ success: false });
+        return;
+      }
+      let earned = false;
+      const timeout = setTimeout(() => {
+        try {
+          finish(false);
+        } catch (e) {
+          reportAdError('rewardedInterstitial.LOAD_TIMEOUT finish()', e);
+        }
+      }, LOAD_TIMEOUT);
+      let unsubEarned = () => {};
+      let unsubLoaded = () => {};
+      let unsubClosed = () => {};
+      let unsubError = () => {};
+      try {
+        unsubEarned = current.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+          try {
+            earned = true;
+          } catch (e) {
+            reportAdError('rewardedInterstitial.EARNED_REWARD', e);
+          }
+        });
+        unsubLoaded = current.addAdEventListener(RewardedAdEventType.LOADED, () => {
+          clearTimeout(timeout);
+          try {
+            current.show();
+          } catch (e) {
+            reportAdError('rewardedInterstitial.LOADED show()', e);
+            finish(false);
+          }
+        });
+        unsubClosed = current.addAdEventListener(AdEventType.CLOSED, () => {
+          try {
+            finish(earned);
+          } catch (e) {
+            reportAdError('rewardedInterstitial.CLOSED finish()', e);
+          }
+        });
+        unsubError = current.addAdEventListener(AdEventType.ERROR, (error: unknown) => {
+          reportAdError('rewardedInterstitial.ERROR', error);
+          try {
+            finish(false);
+          } catch (e) {
+            reportAdError('rewardedInterstitial.ERROR finish()', e);
+          }
+        });
+      } catch (e) {
+        reportAdError('rewardedInterstitial.addAdEventListener', e);
+      }
+      try {
+        current.load();
+      } catch (e) {
+        console.warn('RewardedInterstitialAd.load() threw', e);
+        finish(false);
+      }
+    });
+  } catch (e) {
+    console.warn('showRewardedInterstitialAd() failed', e);
+    rewardedInterstitialInFlight = false;
+    return { success: false };
   }
 }

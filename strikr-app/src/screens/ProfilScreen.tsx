@@ -10,7 +10,7 @@ import { useAuth } from '../state/auth';
 import { useFriends } from '../state/friends';
 import { useGameHistory } from '../state/appStats';
 import { useAvatar } from '../state/avatar';
-import { useWatchAdForDiamonds } from '../game/useWatchAdForDiamonds';
+import { useAdBudget } from '../state/adBudget';
 import { pickAndUploadAvatar } from '../lib/avatarUpload';
 import { BADGES } from '../lib/badges';
 import AvatarFrame from '../components/AvatarFrame';
@@ -34,7 +34,7 @@ export default function ProfilScreen() {
   const { stats, derived, buyStreakFreeze } = useStats();
   const [freezeMessage, setFreezeMessage] = useState<string | null>(null);
   const [freezeNotEnough, setFreezeNotEnough] = useState(false);
-  const { ready: adReady, watching: adWatching, watch: watchAd } = useWatchAdForDiamonds();
+  const { ready: adReady, watching: adWatching, watch: watchAd } = useAdBudget();
   const { user } = useAuth();
   const { friends, refresh: refreshFriends } = useFriends();
   const { history, refresh: refreshHistory } = useGameHistory(5);

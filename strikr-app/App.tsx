@@ -28,14 +28,17 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { I18nProvider } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/state/auth';
 import { DiamondsProvider, useDiamonds } from './src/state/diamonds';
+import { AdBudgetProvider } from './src/state/adBudget';
 import { StatsProvider, useStats } from './src/state/stats';
 import { AvatarProvider } from './src/state/avatar';
 import { SolvedPlayersProvider } from './src/state/solvedPlayers';
 import { SettingsProvider } from './src/state/settings';
+import { RewardedInterstitialProvider } from './src/state/rewardedInterstitial';
 import RootNavigator from './src/navigation/RootNavigator';
 import AuthScreen from './src/screens/AuthScreen';
 import LevelUpModal from './src/components/LevelUpModal';
 import DailyRewardModal from './src/components/DailyRewardModal';
+import RewardedInterstitialModal from './src/components/RewardedInterstitialModal';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 // Installed before ensureAdsInitialized() so it's in place for the very
@@ -94,6 +97,7 @@ function AppShell() {
       <RootNavigator />
       <LevelUpModal />
       <DailyRewardModal />
+      <RewardedInterstitialModal />
     </View>
   );
 }
@@ -123,15 +127,19 @@ export default function App() {
           <I18nProvider>
             <AuthProvider>
               <DiamondsProvider>
-                <StatsProvider>
-                  <AvatarProvider>
-                    <SolvedPlayersProvider>
-                      <SettingsProvider>
-                        <AppShell />
-                      </SettingsProvider>
-                    </SolvedPlayersProvider>
-                  </AvatarProvider>
-                </StatsProvider>
+                <AdBudgetProvider>
+                  <StatsProvider>
+                    <AvatarProvider>
+                      <SolvedPlayersProvider>
+                        <SettingsProvider>
+                          <RewardedInterstitialProvider>
+                            <AppShell />
+                          </RewardedInterstitialProvider>
+                        </SettingsProvider>
+                      </SolvedPlayersProvider>
+                    </AvatarProvider>
+                  </StatsProvider>
+                </AdBudgetProvider>
               </DiamondsProvider>
             </AuthProvider>
           </I18nProvider>

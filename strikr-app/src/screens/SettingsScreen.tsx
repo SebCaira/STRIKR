@@ -15,7 +15,7 @@ import { isPlaceholderEmail } from '../lib/username';
 import { requestNotificationPermission, scheduleDailyReminder, cancelDailyReminder, registerPushToken, clearPushToken } from '../lib/notifications';
 import { friendlyError } from '../lib/errors';
 import { AVATAR_FRAMES } from '../data/avatarFrames';
-import { useWatchAdForDiamonds } from '../game/useWatchAdForDiamonds';
+import { useAdBudget } from '../state/adBudget';
 import AvatarFrame from '../components/AvatarFrame';
 
 // Same address already published in privacy-policy.md / terms-of-service.md
@@ -49,7 +49,7 @@ export default function SettingsScreen() {
   const { avatarUrl, ownedFrames, equippedFrame, buyFrame, equipFrame } = useAvatar();
   const [frameMessage, setFrameMessage] = useState<string | null>(null);
   const [frameNotEnough, setFrameNotEnough] = useState(false);
-  const { ready: adReady, watching: adWatching, watch: watchAd } = useWatchAdForDiamonds();
+  const { ready: adReady, watching: adWatching, watch: watchAd } = useAdBudget();
   const { syncLocalDelta } = useDiamonds();
   const { derived } = useStats();
   const insets = useSafeAreaInsets();

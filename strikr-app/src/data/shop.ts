@@ -42,5 +42,10 @@ export const SHOP_PACKAGES: ShopPackage[] = [
 export const REWARDED_AD_DIAMONDS = 15;
 export const REWARDED_AD_PER_DAY = 10;
 
-// Forced interstitial: shown every Nth round via ads.ts's showInterstitialAd().
+// Every Nth round, instead of a forced interstitial with nothing in return,
+// the player is offered a rewarded interstitial (see RewardedInterstitialModal)
+// — accept and watch for +REWARDED_INTERSTITIAL_DIAMONDS, or decline and
+// continue for free. No daily cap: it's opt-in, so there's no forced-view
+// quota to protect the way REWARDED_AD_PER_DAY does for the Shop's button.
 export const INTERSTITIAL_EVERY_N_GAMES = 5;
+export const REWARDED_INTERSTITIAL_DIAMONDS = 10;
