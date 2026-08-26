@@ -29,6 +29,7 @@ import XIPitch from '../components/XIPitch';
 import RulesModal from '../components/RulesModal';
 import { useRulesModal } from '../lib/useRulesModal';
 import { KEY_ROWS_BY_LANG } from '../lib/keyboard';
+import { logEvent } from '../lib/analytics';
 
 const DURATIONS = [60, 90, 120, 180];
 const LEVEL_META: Record<Level, { icon: string; labelKey: string }> = {
@@ -207,6 +208,32 @@ export default function GroupGameScreen({
   const handledRoundRef = useRef<string | null>(null);
 
   const myRow = game ? players.find((p) => p.user_id === user?.id) : undefined;
+
+  // Diagnostic for the "invitee sees a create-room screen instead of
+  // accept/decline" report — logs exactly what state this screen landed in
+  // once loading settles, so the real cause (stale invite picked up by
+  // loadActive(), a myRow lookup miss, an unexpected game.status, etc.) is
+  // visible in app_events instead of guessed at from database archaeology.
+  // Fires once per distinct game.id (or once for "no game at all").
+  const loggedStateForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (loading || !user) return;
+    const key = `${variant}:${gameType}:${game?.id ?? 'none'}`;
+    if (loggedStateForRef.current === key) return;
+    loggedStateForRef.current = key;
+    logEvent(user.id, 'group_screen_diagnostic', {
+      variant,
+      gameType,
+      hasInviteUserId: !!inviteUserId,
+      gameId: game?.id ?? null,
+      gameStatus: game?.status ?? null,
+      gameCreatorId: game?.creator_id ?? null,
+      myUserId: user.id,
+      myRowStatus: myRow?.status ?? null,
+      isCreator,
+      playersCount: players.length,
+    });
+  }, [loading, user, variant, gameType, inviteUserId, game, myRow, isCreator, players.length]);
 
   useEffect(() => {
     if (game && game.status === 'active' && handledRoundRef.current !== game.id) {

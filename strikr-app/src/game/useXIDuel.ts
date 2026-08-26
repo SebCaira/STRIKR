@@ -15,7 +15,7 @@ import { logEvent } from '../lib/analytics';
 import { fx } from '../lib/fx';
 import { stripAcc } from './engine';
 import { XI_MATCHES } from '../data/xiMatches';
-import { playerFull, playerBase } from '../data/quizLists';
+import { playerFull, playerBase, playerPhoto } from '../data/quizLists';
 
 export type XIDuelRole = 'creator' | 'opponent';
 
@@ -250,6 +250,14 @@ export function useXIDuel() {
         const base = norm(playerBase(p));
         if (input === full) return true;
         if (input === base && (baseCounts.get(base) || 0) === 1) return true;
+        // XI Type entries store just the surname as full/base (e.g.
+        // "Donnarumma"), with the real first+last name in `photo` — but the
+        // autocomplete suggestions pull from the global player database,
+        // which shows/inserts the full "Gianluigi Donnarumma" form. Typing
+        // or tapping that suggestion could never validate without this:
+        // only the bare surname ever worked.
+        const photo = playerPhoto(p);
+        if (photo && input === norm(photo)) return true;
         return false;
       });
       if (idx === -1) {

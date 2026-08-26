@@ -4,6 +4,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '../lib/supabase';
+import { logEvent } from '../lib/analytics';
 import { XI_MATCHES } from '../data/xiMatches';
 import TabNavigator from './TabNavigator';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -69,6 +70,20 @@ async function openInviteFromNotification(data: unknown) {
         game = row.game_type;
       }
     }
+    // Diagnostic for the "invitee taps the notification but lands on a
+    // create-room screen" report — logs whether this tap resolved the
+    // right game id/type and whether the navigator was actually ready to
+    // act on it, instead of guessing from database timestamps alone.
+    supabase.auth.getUser().then(({ data: authData }) => {
+      const uid = authData?.user?.id;
+      if (uid) {
+        logEvent(uid, 'group_invite_tap_diagnostic', {
+          gameId: gameId ?? null,
+          resolvedGame: game,
+          navigatorReady: navigationRef.isReady(),
+        });
+      }
+    });
     if (!navigationRef.isReady()) return;
     navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'group', game } } as never);
   }

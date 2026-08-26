@@ -6,7 +6,7 @@ import { useDiamonds } from '../state/diamonds';
 import { useStats } from '../state/stats';
 import { fx } from '../lib/fx';
 import { stripAcc } from '../game/engine';
-import { QUIZ_LISTS, QuizList, playerFull, playerBase } from '../data/quizLists';
+import { QUIZ_LISTS, QuizList, playerFull, playerBase, playerPhoto } from '../data/quizLists';
 import { XI_MATCHES } from '../data/xiMatches';
 
 export type QuizStatus = 'idle' | 'playing' | 'finished';
@@ -130,6 +130,14 @@ export function useQuizList() {
         const base = norm(playerBase(p));
         if (input === full) return true;
         if (input === base && (baseCounts.get(base) || 0) === 1) return true;
+        // XI Type entries store just the surname as full/base (e.g.
+        // "Donnarumma"), with the real first+last name in `photo` — but the
+        // autocomplete suggestions pull from the global player database,
+        // which shows/inserts the full "Gianluigi Donnarumma" form. Typing
+        // or tapping that suggestion could never validate without this:
+        // only the bare surname ever worked.
+        const photo = playerPhoto(p);
+        if (photo && input === norm(photo)) return true;
         return false;
       });
 
