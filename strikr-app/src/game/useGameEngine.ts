@@ -65,6 +65,38 @@ export interface GameState {
 const fullPool = PLAYERS.map((_, i) => i).filter((i) => PLAYERS[i].clubs.length >= 3);
 const nameToIndex = new Map(PLAYERS.map((p, i) => [p.n, i]));
 
+// Feedback was "trop dur au debut" — a first-time player could land on an
+// obscure hard-tier name for their very first-ever round, with no ramp-up.
+// tierOf() already classifies every player (see engine.ts), just not used
+// for selection before now. Rather than a permanent "Easy mode" (only ~40
+// players are tagged 'easy' out of 658 — isolating that pool would get
+// repetitive fast), this biases the DRAW ORDER for newer players only,
+// fading out completely by DIFFICULTY_RAMP_SOLVES solves so the pool still
+// cycles through everyone, just front-loaded with recognizable names while
+// someone's still learning the game.
+const DIFFICULTY_RAMP_SOLVES = 15;
+
+function buildDrawOrder(unsolvedIdx: number[], solvesCount: number): number[] {
+  if (solvesCount >= DIFFICULTY_RAMP_SOLVES) return shuffle(unsolvedIdx.slice());
+
+  const easy = shuffle(unsolvedIdx.filter((i) => tierOf(PLAYERS[i].n) === 'easy'));
+  const rest = shuffle(unsolvedIdx.filter((i) => tierOf(PLAYERS[i].n) !== 'easy'));
+  // Chance of the next draw coming from the easy queue: starts high for a
+  // brand new player and fades to 0 by DIFFICULTY_RAMP_SOLVES, so the bias
+  // eases off gradually rather than switching off abruptly.
+  const easyChance = 0.8 * (1 - solvesCount / DIFFICULTY_RAMP_SOLVES);
+  const order: number[] = [];
+  let ei = 0;
+  let ri = 0;
+  while (ei < easy.length || ri < rest.length) {
+    const drawEasy = ei < easy.length && (ri >= rest.length || Math.random() < easyChance);
+    order.push(drawEasy ? easy[ei++] : rest[ri++]);
+  }
+  // pickPlayer() below draws via pool.pop() (from the end), so the intended
+  // draw order needs reversing before it's stored.
+  return order.reverse();
+}
+
 export function useGameEngine() {
   const { diamonds, addDiamonds } = useDiamonds();
   const { stats, recordWin, addBonusXp, spendFreeHint } = useStats();
@@ -81,6 +113,13 @@ export function useGameEngine() {
   // same pattern as solvedRef above.
   const gameWinsTodayRef = useRef(stats.gameWinsToday);
   gameWinsTodayRef.current = stats.gameWinsToday;
+  // Same reasoning, read by pickPlayer() for the difficulty ramp below —
+  // without this it'd read whatever stats.solves was on the very first
+  // render forever (pickPlayer has an empty dep array so its closure never
+  // updates), which would freeze the ramp instead of fading it out as the
+  // player actually progresses.
+  const solvesRef = useRef(stats.solves);
+  solvesRef.current = stats.solves;
 
   const [state, setState] = useState<GameState>({
     level: null,
@@ -143,7 +182,7 @@ export function useGameEngine() {
     if (!pool.length) {
       const unsolved = fullPool.filter((i) => !solvedRef.current.has(PLAYERS[i].n));
       // Whole roster solved — start the pool over rather than stalling the game.
-      pool = shuffle((unsolved.length ? unsolved : fullPool).slice());
+      pool = buildDrawOrder(unsolved.length ? unsolved : fullPool, solvesRef.current);
       remainingPool.current = pool;
     }
     const playerIdx = pool.pop()!;

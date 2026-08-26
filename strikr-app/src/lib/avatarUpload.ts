@@ -5,11 +5,19 @@ export async function pickAndUploadAvatar(userId: string): Promise<{ url?: strin
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) return { error: 'permission_denied' };
 
+  // Cropped to a square but NOT downscaled in resolution — a modern phone
+  // photo stays several MB even after cropping, which is slow to upload and
+  // slow to (re-)download everywhere the avatar shows up (leaderboard rows,
+  // friends list, profile). A real fix needs actual resizing (a native
+  // image-manipulation module, requiring a new build — tracked separately).
+  // Dropping quality this much is the one lever available without that: it
+  // meaningfully shrinks the file for a circle this small on screen, at the
+  // cost of some visible compression artifacting if zoomed in.
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [1, 1],
-    quality: 0.7,
+    quality: 0.3,
   });
   if (result.canceled || !result.assets?.[0]) return {};
 
