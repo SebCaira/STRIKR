@@ -220,11 +220,20 @@ export function useXIDuel() {
   const guessName = useCallback(
     async (raw: string): Promise<{ error: string | null }> => {
       if (!duel || !user) return { error: 'no_duel' };
-      if (duel.status !== 'active') return { error: 'not_active' };
+      if (duel.status !== 'active') {
+        logEvent(user.id, 'xi_duel_guess_diagnostic', { reason: 'not_active', raw, duel_status: duel.status, match_id: duel.match_id });
+        return { error: 'not_active' };
+      }
       const role = myRole(duel);
-      if (duel.turn !== role) return { error: 'not_your_turn' };
+      if (duel.turn !== role) {
+        logEvent(user.id, 'xi_duel_guess_diagnostic', { reason: 'not_your_turn', raw, turn: duel.turn, role, match_id: duel.match_id });
+        return { error: 'not_your_turn' };
+      }
       const match = XI_MATCHES.find((m) => m.id === duel.match_id);
-      if (!match) return { error: 'invalid_answer' };
+      if (!match) {
+        logEvent(user.id, 'xi_duel_guess_diagnostic', { reason: 'match_not_found', raw, match_id: duel.match_id });
+        return { error: 'invalid_answer' };
+      }
 
       const input = norm(raw);
       if (!input) return { error: 'invalid_answer' };
@@ -243,7 +252,25 @@ export function useXIDuel() {
         if (input === base && (baseCounts.get(base) || 0) === 1) return true;
         return false;
       });
-      if (idx === -1) return { error: 'invalid_answer' };
+      if (idx === -1) {
+        // Distinguishes "genuinely not one of the 11" from "correct name but
+        // already claimed" — both used to look identical from the outside
+        // (same generic rejection), which made a real report impossible to
+        // diagnose without this. Reported once, not on every keystroke, so
+        // it can't spam app_events.
+        const alreadyFoundMatch = match.players.some(
+          (p, i) => foundIndexes.has(i) && (norm(playerFull(p)) === input || norm(playerBase(p)) === input)
+        );
+        logEvent(user.id, 'xi_duel_guess_diagnostic', {
+          reason: alreadyFoundMatch ? 'already_found' : 'no_match',
+          raw,
+          normalized: input,
+          match_id: duel.match_id,
+          roster: match.players.map((p) => norm(playerFull(p))),
+          found_indexes: Array.from(foundIndexes),
+        });
+        return { error: 'invalid_answer' };
+      }
 
       const name = playerFull(match.players[idx]);
       const nextFound = [...duel.found, { index: idx, by: role, name }];
