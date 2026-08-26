@@ -109,7 +109,7 @@ function useDailyCounter(storageKey: string) {
   return [count, bump] as const;
 }
 
-export function useGroupGame() {
+export function useGroupGame(targetGameId?: string) {
   const { user } = useAuth();
   const { addDiamonds } = useDiamonds();
   const { stats, recordWin } = useStats();
@@ -137,6 +137,29 @@ export function useGroupGame() {
       return;
     }
     setLoading(true);
+
+    // Arrived via a group_invite push notification: load exactly that game
+    // instead of guessing from "most recent pending" below. A player can
+    // have several pending invites at once, and picking the wrong one (or
+    // finding none yet, e.g. right after a duplicate/cancelled row) is what
+    // sent invitees to the "create a room" screen instead of accept/decline.
+    if (targetGameId) {
+      const { data: targeted } = await supabase
+        .from('group_games')
+        .select('*')
+        .eq('id', targetGameId)
+        .neq('status', 'finished')
+        .maybeSingle();
+      if (targeted) {
+        setGame(targeted as GroupGameRow);
+        await loadPlayers((targeted as GroupGameRow).id);
+        setLoading(false);
+        return;
+      }
+      // Fall through to the general lookup if that specific invite is gone
+      // (already finished/declined elsewhere) rather than getting stuck.
+    }
+
     const { data: myRows } = await supabase
       .from('group_game_players')
       .select('game_id')
@@ -161,7 +184,7 @@ export function useGroupGame() {
     if (g) await loadPlayers(g.id);
     else setPlayers([]);
     setLoading(false);
-  }, [user, loadPlayers]);
+  }, [user, loadPlayers, targetGameId]);
 
   useEffect(() => {
     loadActive();
@@ -223,51 +246,10 @@ export function useGroupGame() {
     let reward = 0;
     const joined = players.filter((p) => p.status === 'joined');
 
-    if (game.game_type === 'main') {
-      if (me.solved && game.level) {
-        const capped = stats.gameWinsToday >= GAME_REWARDED_WINS_PER_DAY;
-        const solveReward = capped ? 0 : rewardFor(game.level, me.attempts);
-        if (solveReward > 0) {
-          addDiamonds(solveReward);
-          recordWin({ kind: 'game', firstTry: me.attempts === 1, xp: GAME_WIN_XP });
-          reward += solveReward;
-        }
-      }
-    } else if (game.game_type === 'club') {
-      if (me.solved) {
-        const capped = clubRaceRewardedToday >= CLUB_RACE_REWARDED_PER_DAY;
-        const solveReward = capped ? 0 : Math.max(2, CLUB_WIN_DIAMONDS_BASE - (me.attempts - 1));
-        if (solveReward > 0) {
-          addDiamonds(solveReward);
-          recordWin({ kind: 'club_guess', firstTry: me.attempts === 1, xp: CLUB_WIN_XP });
-          bumpClubRaceRewardedToday();
-          reward += solveReward;
-        }
-      }
-    } else if (game.game_type === 'liste') {
-      if (me.found_count > 0) {
-        const capped = listeRaceRewardedToday >= LISTE_RACE_REWARDED_PER_DAY;
-        const solveReward = capped ? 0 : me.found_count * QUIZ_REWARD_PER_PLAYER;
-        if (solveReward > 0) {
-          addDiamonds(solveReward);
-          recordWin({ kind: 'game', firstTry: false, xp: QUIZ_WIN_XP });
-          bumpListeRaceRewardedToday();
-          reward += solveReward;
-        }
-      }
-    } else if (game.game_type === 'grille') {
-      if (me.solved) {
-        const capped = grilleRaceRewardedToday >= GRILLE_RACE_REWARDED_PER_DAY;
-        const solveReward = capped ? 0 : GRILLE_RACE_WIN_DIAMONDS;
-        if (solveReward > 0) {
-          addDiamonds(solveReward);
-          recordWin({ kind: 'duel_solo', firstTry: true, xp: GRILLE_RACE_WIN_XP });
-          bumpGrilleRaceRewardedToday();
-          reward += solveReward;
-        }
-      }
-    }
-
+    // Who actually won the race, computed up front so each game_type's
+    // recordWin() below can flag a true 1-on-1 win toward the "Bats 3 amis
+    // en duel" daily mission — that mission only makes sense for beating a
+    // single opponent, not for merely solving in a 4-player Groupe race.
     let winner: GroupPlayerRow | null = null;
     if (game.game_type === 'liste') {
       winner = joined.reduce<GroupPlayerRow | null>(
@@ -281,6 +263,53 @@ export function useGroupGame() {
         null
       );
     }
+    const isDuelWin = joined.length === 2 && !!winner && winner.user_id === user.id;
+
+    if (game.game_type === 'main') {
+      if (me.solved && game.level) {
+        const capped = stats.gameWinsToday >= GAME_REWARDED_WINS_PER_DAY;
+        const solveReward = capped ? 0 : rewardFor(game.level, me.attempts);
+        if (solveReward > 0) {
+          addDiamonds(solveReward);
+          recordWin({ kind: 'game', firstTry: me.attempts === 1, xp: GAME_WIN_XP, duelWin: isDuelWin });
+          reward += solveReward;
+        }
+      }
+    } else if (game.game_type === 'club') {
+      if (me.solved) {
+        const capped = clubRaceRewardedToday >= CLUB_RACE_REWARDED_PER_DAY;
+        const solveReward = capped ? 0 : Math.max(2, CLUB_WIN_DIAMONDS_BASE - (me.attempts - 1));
+        if (solveReward > 0) {
+          addDiamonds(solveReward);
+          recordWin({ kind: 'club_guess', firstTry: me.attempts === 1, xp: CLUB_WIN_XP, duelWin: isDuelWin });
+          bumpClubRaceRewardedToday();
+          reward += solveReward;
+        }
+      }
+    } else if (game.game_type === 'liste') {
+      if (me.found_count > 0) {
+        const capped = listeRaceRewardedToday >= LISTE_RACE_REWARDED_PER_DAY;
+        const solveReward = capped ? 0 : me.found_count * QUIZ_REWARD_PER_PLAYER;
+        if (solveReward > 0) {
+          addDiamonds(solveReward);
+          recordWin({ kind: 'game', firstTry: false, xp: QUIZ_WIN_XP, duelWin: isDuelWin });
+          bumpListeRaceRewardedToday();
+          reward += solveReward;
+        }
+      }
+    } else if (game.game_type === 'grille') {
+      if (me.solved) {
+        const capped = grilleRaceRewardedToday >= GRILLE_RACE_REWARDED_PER_DAY;
+        const solveReward = capped ? 0 : GRILLE_RACE_WIN_DIAMONDS;
+        if (solveReward > 0) {
+          addDiamonds(solveReward);
+          recordWin({ kind: 'duel_solo', firstTry: true, xp: GRILLE_RACE_WIN_XP, duelWin: isDuelWin });
+          bumpGrilleRaceRewardedToday();
+          reward += solveReward;
+        }
+      }
+    }
+
     if (winner && winner.user_id === user.id && raceWinBonusToday < REWARDED_RACE_WINS_PER_DAY) {
       addDiamonds(RACE_WIN_BONUS);
       reward += RACE_WIN_BONUS;

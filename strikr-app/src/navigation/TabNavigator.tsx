@@ -15,7 +15,7 @@ export type TabParamList = {
   // (deep link straight to the main game) or FriendsScreen's "challenge"
   // button (deep link straight to sending a duel invite for the chosen
   // game) so JeuxScreen can jump past its own hub/mode picker.
-  Jeux: { mode?: 'game' | 'duel' | 'group'; game?: string; inviteUserId?: string; inviteUserName?: string } | undefined;
+  Jeux: { mode?: 'game' | 'duel' | 'group'; game?: string; gameId?: string; inviteUserId?: string; inviteUserName?: string } | undefined;
   Friends: undefined;
   Profil: undefined;
 };

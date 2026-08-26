@@ -85,7 +85,7 @@ async function openInviteFromNotification(data: unknown) {
       }
     });
     if (!navigationRef.isReady()) return;
-    navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'group', game } } as never);
+    navigationRef.navigate('Tabs' as never, { screen: 'Jeux', params: { mode: 'group', game, gameId } } as never);
   }
 }
 

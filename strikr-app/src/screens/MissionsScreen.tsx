@@ -36,8 +36,18 @@ export default function MissionsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
-  const { mission1Done, mission2Done, mission3Done, doneCount, xpAcquis, weeklyGoal, weeklyProgress, weeklyDone } =
-    deriveMissions(stats);
+  const {
+    mission1Done,
+    mission2Done,
+    mission3Done,
+    mission4Done,
+    mission4Progress,
+    doneCount,
+    xpAcquis,
+    weeklyGoal,
+    weeklyProgress,
+    weeklyDone,
+  } = deriveMissions(stats);
 
   const mission2Progress = stats.fastestSolveMsToday === null ? 0 : Math.min(100, Math.round((30000 / stats.fastestSolveMsToday) * 100));
   const mission2Label =
@@ -77,12 +87,13 @@ export default function MissionsScreen() {
       xp: 250,
     },
     {
-      icon: '🏆',
-      iconBg: accent.pink,
+      icon: mission4Done ? '✅' : '🏆',
+      iconBg: mission4Done ? colors.card : accent.pink,
       title: t('mission_4_title'),
-      progress: 0,
-      progressLabel: t('mission_4_progress_label'),
-      cardBg: colors.card,
+      progress: mission4Progress,
+      progressLabel: `${Math.min(stats.duelWinsToday, 3)}/3 · ${t('mission_4_progress_suffix')}`,
+      done: mission4Done,
+      cardBg: mission4Done ? accent.mint : colors.card,
       xp: 200,
     },
   ];

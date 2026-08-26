@@ -81,12 +81,16 @@ export default function DailyScreen() {
 
         {state.status === 'playing' && (
           <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 8 }}>
+            {/* Icons match this screen's own tile colors (TILE_COLORS above:
+                exact/right-spot = yellow, present/wrong-spot = white) —
+                not the classic Wordle green/yellow convention, which this
+                game doesn't use (there's no green tile here at all). */}
             <LetterHintButton
-              icon="🟨" label={t('hint_letter_present')} cost={LETTER_HINT_COSTS.present}
+              icon="⬜" label={t('hint_letter_present')} cost={LETTER_HINT_COSTS.present}
               diamonds={diamonds} exhausted={letterHintExhausted.present} onPress={() => buyLetterHint('present')}
             />
             <LetterHintButton
-              icon="🟩" label={t('hint_letter_placed')} cost={LETTER_HINT_COSTS.placed}
+              icon="🟨" label={t('hint_letter_placed')} cost={LETTER_HINT_COSTS.placed}
               diamonds={diamonds} exhausted={letterHintExhausted.placed} onPress={() => buyLetterHint('placed')}
             />
           </View>

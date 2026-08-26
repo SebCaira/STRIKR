@@ -61,6 +61,7 @@ export default function JeuxScreen() {
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null);
   const [selectedMode, setSelectedMode] = useState<ModeId | null>(null);
   const [invite, setInvite] = useState<{ userId: string; userName: string } | null>(null);
+  const [inviteGameId, setInviteGameId] = useState<string | undefined>(undefined);
 
   // Deep links from HomeScreen/MissionsScreen ("play now") or FriendsScreen
   // ("challenge this friend") skip straight past the hub and mode picker.
@@ -86,24 +87,27 @@ export default function JeuxScreen() {
       const requestedGame = route.params.game as GameId | undefined;
       setSelectedGame(requestedGame && GAMES.some((g) => g.id === requestedGame) ? requestedGame : 'main');
       setSelectedMode('group');
-      navigation.setParams({ mode: undefined, game: undefined });
+      setInviteGameId(route.params.gameId);
+      navigation.setParams({ mode: undefined, game: undefined, gameId: undefined });
     }
-  }, [route.params?.mode, route.params?.game, route.params?.inviteUserId, route.params?.inviteUserName, navigation]);
+  }, [route.params?.mode, route.params?.game, route.params?.gameId, route.params?.inviteUserId, route.params?.inviteUserName, navigation]);
 
   const backToHub = () => {
     setSelectedGame(null);
     setSelectedMode(null);
     setInvite(null);
+    setInviteGameId(undefined);
   };
   const backToModes = () => {
     setSelectedMode(null);
     setInvite(null);
+    setInviteGameId(undefined);
   };
 
   // Playing a specific game+mode.
   if (selectedGame && selectedMode) {
     if (selectedGame === 'main' && selectedMode === 'solo') return <GameScreen onBack={backToModes} />;
-    if (selectedGame === 'main' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="main" variant="group" />;
+    if (selectedGame === 'main' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="main" variant="group" gameId={inviteGameId} />;
     if (selectedGame === 'main' && selectedMode === 'duel') {
       return (
         <GroupGameScreen
@@ -129,7 +133,7 @@ export default function JeuxScreen() {
         />
       );
     }
-    if (selectedGame === 'club' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="club" variant="group" />;
+    if (selectedGame === 'club' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="club" variant="group" gameId={inviteGameId} />;
     if (selectedGame === 'liste' && selectedMode === 'solo') return <QuizListScreen onBack={backToModes} />;
     if (selectedGame === 'liste' && selectedMode === 'duel') {
       return (
@@ -143,7 +147,7 @@ export default function JeuxScreen() {
         />
       );
     }
-    if (selectedGame === 'liste' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" />;
+    if (selectedGame === 'liste' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" gameId={inviteGameId} />;
     if (selectedGame === 'grille' && selectedMode === 'solo') return <SoloGridScreen onExit={backToModes} />;
     if (selectedGame === 'grille' && selectedMode === 'duel') {
       return (
@@ -155,7 +159,7 @@ export default function JeuxScreen() {
         />
       );
     }
-    if (selectedGame === 'grille' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="grille" variant="group" />;
+    if (selectedGame === 'grille' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="grille" variant="group" gameId={inviteGameId} />;
     if (selectedGame === 'clubsquiz' && selectedMode === 'solo') return <ClubsQuizScreen onBack={backToModes} />;
     if (selectedGame === 'xi' && selectedMode === 'solo') return <QuizListScreen onBack={backToModes} pool="xi" />;
     if (selectedGame === 'xi' && selectedMode === 'duel') {
@@ -168,7 +172,7 @@ export default function JeuxScreen() {
         />
       );
     }
-    if (selectedGame === 'xi' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" listPool="xi" />;
+    if (selectedGame === 'xi' && selectedMode === 'group') return <GroupGameScreen onBack={backToModes} gameType="liste" variant="group" listPool="xi" gameId={inviteGameId} />;
   }
 
   // Mode picker for the selected game.

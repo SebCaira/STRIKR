@@ -54,6 +54,13 @@ interface GroupGameScreenProps {
   inviteUserId?: string;
   inviteUserName?: string;
   onInviteConsumed?: () => void;
+  // Set when arriving via a group_invite push notification: loads exactly
+  // that game by id instead of useGroupGame()'s "most recent pending game"
+  // guess, which could pick the wrong row (or find nothing yet) when a
+  // player has several pending invites at once — this was the actual cause
+  // behind invitees landing on the "create a room" screen instead of
+  // accept/decline.
+  gameId?: string;
 }
 
 function Crest({ name, revealFraction }: { name: string; revealFraction: number }) {
@@ -126,6 +133,7 @@ export default function GroupGameScreen({
   inviteUserId,
   inviteUserName,
   onInviteConsumed,
+  gameId,
 }: GroupGameScreenProps) {
   const { colors, accent, fonts } = useTheme();
   const { t, lang } = useI18n();
@@ -150,7 +158,7 @@ export default function GroupGameScreen({
     finishGame,
     leaveFinished,
     lastReward,
-  } = useGroupGame();
+  } = useGroupGame(gameId);
   const { recordRoundPlayed } = useInterstitialAd();
 
   const maxFriends = variant === 'duel' ? 1 : 4;
@@ -225,6 +233,7 @@ export default function GroupGameScreen({
       variant,
       gameType,
       hasInviteUserId: !!inviteUserId,
+      requestedGameId: gameId ?? null,
       gameId: game?.id ?? null,
       gameStatus: game?.status ?? null,
       gameCreatorId: game?.creator_id ?? null,
@@ -233,7 +242,19 @@ export default function GroupGameScreen({
       isCreator,
       playersCount: players.length,
     });
-  }, [loading, user, variant, gameType, inviteUserId, game, myRow, isCreator, players.length]);
+  }, [loading, user, variant, gameType, inviteUserId, gameId, game, myRow, isCreator, players.length]);
+
+  // Counts every finished group/duel round toward the every-5-rounds
+  // checkpoint, not just the ones continued via this screen's own
+  // "Revanche"/"Quitter" buttons — a player who instead goes back to Amis
+  // and sends (or accepts) a fresh challenge each time was never hitting
+  // recordRoundPlayed at all. Fires once per game id, right as results show.
+  const countedGameIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!game || game.status !== 'finished' || countedGameIdRef.current === game.id) return;
+    countedGameIdRef.current = game.id;
+    recordRoundPlayed(() => {});
+  }, [game?.status, game?.id, recordRoundPlayed]);
 
   useEffect(() => {
     if (game && game.status === 'active' && handledRoundRef.current !== game.id) {
@@ -1172,13 +1193,13 @@ export default function GroupGameScreen({
         {othersJoined.length > 0 && (
           <Pressable
             disabled={busy}
-            onPress={() => recordRoundPlayed(rematch)}
+            onPress={rematch}
             style={{ flex: 1, paddingVertical: 14, backgroundColor: '#1a1a1a', borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center', opacity: busy ? 0.6 : 1 }}
           >
             <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>⚔️ {t('duel_rematch')}</Text>
           </Pressable>
         )}
-        <Pressable onPress={() => recordRoundPlayed(leaveFinished)} style={{ flex: 1, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
+        <Pressable onPress={leaveFinished} style={{ flex: 1, paddingVertical: 14, backgroundColor: accent.coral, borderWidth: 2, borderColor: colors.border, borderRadius: 14, alignItems: 'center' }}>
           <Text style={{ fontFamily: fonts.display, fontSize: 13, color: '#fff', letterSpacing: 0.5, textTransform: 'uppercase' }}>{t('group_leave')}</Text>
         </Pressable>
       </View>

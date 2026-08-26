@@ -174,7 +174,7 @@ export function useXIDuel() {
     } else {
       setLastReward(0);
     }
-    recordWin({ kind: 'duel', firstTry: won, xp: won ? WIN_XP : DRAW_XP });
+    recordWin({ kind: 'duel', firstTry: won, xp: won ? WIN_XP : DRAW_XP, duelWin: won });
     fx.win();
   }, [duel, user, rewardedToday, addDiamonds, recordWin]);
 

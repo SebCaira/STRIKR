@@ -42,6 +42,7 @@ export interface StatsData {
   gameWinsToday: number;
   firstTryHardWinToday: boolean;
   fastestSolveMsToday: number | null;
+  duelWinsToday: number;
   // Daily login reward — deliberately separate from currentStreak/
   // lastPlayedDate above: those only move on an actual game win, this moves
   // just from opening the app and claiming, so the two streaks can (and
@@ -69,6 +70,7 @@ const DEFAULT_STATS: StatsData = {
   gameWinsToday: 0,
   firstTryHardWinToday: false,
   fastestSolveMsToday: null,
+  duelWinsToday: 0,
   dailyRewardStreak: 0,
   dailyRewardClaimedDate: null,
   freeHints: 0,
@@ -140,6 +142,11 @@ interface RecordWinOptions {
   xp: number;
   level?: 'easy' | 'medium' | 'hard';
   elapsedMs?: number;
+  // True when this win was actually beating a friend head-to-head (a 2-player
+  // duel, not a solo game or a >2-player Groupe race) — feeds the "Bats 3
+  // amis en duel" daily mission, which had a title and +200 XP budget in the
+  // dictionary/summary math but nothing behind it actually incrementing it.
+  duelWin?: boolean;
 }
 
 interface StatsContextValue {
@@ -250,7 +257,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const recordWin = useCallback(
-    ({ kind, firstTry, xp, level, elapsedMs }: RecordWinOptions) => {
+    ({ kind, firstTry, xp, level, elapsedMs, duelWin }: RecordWinOptions) => {
       setStats((prev) => {
         const today = todayStr();
         let currentStreak = prev.currentStreak;
@@ -282,6 +289,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
               ? elapsedMs
               : Math.min(priorFastest, elapsedMs)
             : priorFastest;
+        const duelWinsToday = duelWin ? (sameMissionDay ? prev.duelWinsToday + 1 : 1) : sameMissionDay ? prev.duelWinsToday : 0;
 
         const next: StatsData = {
           ...prev,
@@ -298,6 +306,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
           missionsDate: today,
           gameWinsToday,
           firstTryHardWinToday,
+          duelWinsToday,
           fastestSolveMsToday,
         };
         const prevLevel = levelForXp(prev.xp).level;
